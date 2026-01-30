@@ -1,16 +1,14 @@
-// types/index.ts
 export interface RideRequest {
   id: string;
-  type: "CAB" | "GYM" | "TRAIN";
+  // Update this line to include the new categories
+  type: "CAB" | "GYM" | "TRAIN" | "FOOD" | "STUDY" | "MOVIE"; 
   description: string;
   time: string;
-  createdAt: any; // We use 'any' to handle Firestore timestamps easily
+  createdAt: any;
   status: "OPEN" | "ACCEPTED" | "CLOSED";
   creatorId: string;
   creatorName: string;
   creatorEmail: string;
-  
-  // Optional fields (add '?' so TypeScript doesn't complain if they are missing)
   acceptedBy?: string;
   acceptedByName?: string;
   acceptedByEmail?: string;
