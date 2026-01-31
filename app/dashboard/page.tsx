@@ -192,7 +192,7 @@ export default function Dashboard() {
       <nav className="hidden md:block fixed top-0 inset-x-0 z-50 border-b border-white/10 bg-[#0f172a]/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab("FEED")}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20"><Zap className="text-white fill-white" size={20} /></div>
+            <div className="w-10 h-10 rounded-xl bg-linear-to-tr from-indigo-500 to-purple-500 flex items-center justify-center shadow-lg shadow-indigo-500/20"><Zap className="text-white fill-white" size={20} /></div>
             <span className="text-xl font-bold tracking-tight">SRM<span className="text-indigo-400">Social</span></span>
           </div>
           <div className="flex items-center gap-4">
@@ -222,7 +222,7 @@ export default function Dashboard() {
           <>
             <div className="mb-8 md:mb-12 space-y-6">
               <div className="hidden md:block">
-                  <h1 className="text-5xl font-bold mb-2 bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Find your squad.</h1>
+                  <h1 className="text-5xl font-bold mb-2 bg-linear-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Find your squad.</h1>
               </div>
               {/* Filter Chips - Horizontal Scroll */}
               <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
@@ -247,7 +247,7 @@ export default function Dashboard() {
                   return (
                     <motion.div key={req.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={cn("relative p-5 md:p-6 rounded-3xl border backdrop-blur-md transition-all", isAccepted ? "bg-emerald-500/10 border-emerald-500/20" : "bg-white/5 border-white/10")}>
                       <div className="flex justify-between items-start mb-4">
-                        <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center text-white bg-gradient-to-br shadow-lg", Category.gradient)}><Category.icon size={20} /></div>
+                        <div className={cn("w-10 h-10 md:w-12 md:h-12 rounded-2xl flex items-center justify-center text-white bg-linear-to-br shadow-lg", Category.gradient)}><Category.icon size={20} /></div>
                         <span className="text-xs font-mono text-slate-500 bg-black/20 px-2 py-1 rounded-lg">{req.createdAt?.seconds ? format(new Date(req.createdAt.seconds * 1000), 'HH:mm') : 'Now'}</span>
                       </div>
                       <h3 className={cn("text-lg md:text-xl font-semibold leading-snug mb-3", isAccepted && "text-emerald-400 line-through")}>{req.description}</h3>
@@ -283,7 +283,7 @@ export default function Dashboard() {
             </div>
             <div className="space-y-3">
                 {leaderboard.map((u, index) => (
-                    <div key={u.id} className={cn("flex items-center gap-4 p-4 rounded-2xl border", index < 3 ? "bg-gradient-to-r from-yellow-500/10 to-transparent border-yellow-500/20" : "bg-white/5 border-white/10")}>
+                    <div key={u.id} className={cn("flex items-center gap-4 p-4 rounded-2xl border", index < 3 ? "bg-linear-to-r from-yellow-500/10 to-transparent border-yellow-500/20" : "bg-white/5 border-white/10")}>
                         <div className={cn("w-8 h-8 flex items-center justify-center font-bold rounded-full text-sm", index === 0 ? "bg-yellow-500 text-black" : "text-slate-500 bg-white/5")}>{index + 1}</div>
                         <div className="w-10 h-10 rounded-full bg-indigo-500/20 overflow-hidden">
                             {u.photoURL ? <img src={u.photoURL} referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User size={16}/></div>}
@@ -351,7 +351,7 @@ export default function Dashboard() {
             <NavIcon icon={Trophy} label="Leaders" isActive={activeTab === "LEADERBOARD"} onClick={() => setActiveTab("LEADERBOARD")} />
             
             {/* CENTER ADD BUTTON */}
-            <button onClick={() => setIsModalOpen(true)} className="mb-8 w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/40 border-4 border-[#0f172a]">
+            <button onClick={() => setIsModalOpen(true)} className="mb-8 w-14 h-14 rounded-full bg-linear-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/40 border-4 border-[#0f172a]">
                 <Plus size={28} />
             </button>
             
@@ -366,8 +366,8 @@ export default function Dashboard() {
       
       {/* 1. CREATE PLAN (Bottom Sheet on Mobile) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4">
-          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} className="bg-[#1e293b] w-full md:w-[500px] rounded-t-3xl md:rounded-3xl border-t md:border border-white/10 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-100 flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4">
+          <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} className="bg-[#1e293b] w-full md:w-125 rounded-t-3xl md:rounded-3xl border-t md:border border-white/10 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6 md:hidden" />
             <div className="flex justify-between items-center mb-6">
                  <h2 className="text-2xl font-bold">New Plan</h2>
@@ -375,8 +375,8 @@ export default function Dashboard() {
             </div>
             <form onSubmit={handleCreateRequest} className="space-y-6">
               <div className="grid grid-cols-3 gap-3">{Object.entries(CATEGORIES).map(([key, cat]) => (<button key={key} type="button" onClick={() => setFormType(key as CategoryKey)} className={cn("flex flex-col items-center gap-2 p-3 rounded-xl border transition-all", formType === key ? `bg-white/10 border-white/50 text-white shadow-[0_0_15px_${cat.color.replace('bg-', '')}]` : "bg-white/5 border-transparent text-slate-400 hover:bg-white/10")}><cat.icon size={24} /><span className="text-xs font-medium">{cat.label}</span></button>))}</div>
-              <div className="space-y-4"><input required placeholder="What's the plan?" value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-white text-lg focus:outline-none focus:border-indigo-500" /><div className="flex gap-2"><button type="button" onClick={() => setQuickDate(0)} className="flex-1 bg-white/5 border border-white/10 rounded-lg py-3 text-sm font-bold text-slate-300">Today</button><button type="button" onClick={() => setQuickDate(1)} className="flex-1 bg-white/5 border border-white/10 rounded-lg py-3 text-sm font-bold text-slate-300">Tomorrow</button></div><input type="datetime-local" required value={formTime} onChange={(e) => setFormTime(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark]" /></div>
-              <button type="submit" className="w-full bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold py-4 rounded-xl text-lg mb-4 md:mb-0">Post It</button>
+              <div className="space-y-4"><input required placeholder="What's the plan?" value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-white text-lg focus:outline-none focus:border-indigo-500" /><div className="flex gap-2"><button type="button" onClick={() => setQuickDate(0)} className="flex-1 bg-white/5 border border-white/10 rounded-lg py-3 text-sm font-bold text-slate-300">Today</button><button type="button" onClick={() => setQuickDate(1)} className="flex-1 bg-white/5 border border-white/10 rounded-lg py-3 text-sm font-bold text-slate-300">Tomorrow</button></div><input type="datetime-local" required value={formTime} onChange={(e) => setFormTime(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500 scheme:dark" /></div>
+              <button type="submit" className="w-full bg-linear-to-r from-indigo-500 to-purple-500 text-white font-bold py-4 rounded-xl text-lg mb-4 md:mb-0">Post It</button>
             </form>
           </motion.div>
         </div>
@@ -384,7 +384,7 @@ export default function Dashboard() {
 
       {/* 2. EDIT PROFILE (Bottom Sheet on Mobile) */}
       {isProfileEditOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4">
+        <div className="fixed inset-0 z-100 flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4">
           <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} className="bg-[#1e293b] w-full md:w-96 rounded-t-3xl md:rounded-3xl border-t md:border border-white/10 p-6 shadow-2xl relative">
              <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6 md:hidden" />
              <h2 className="text-xl font-bold mb-6 text-center">Edit Profile</h2>
@@ -431,13 +431,13 @@ function ChatWindow({ request, currentUser, onClose }: { request: RideRequest, c
   const otherPersonName = request.creatorId === currentUser.uid ? request.acceptedByName : request.creatorName;
   
   return (
-    <div className="fixed inset-0 z-[200] bg-[#0f172a] md:bg-black/60 md:backdrop-blur-sm flex items-center justify-center p-0 md:p-4">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#1e293b] w-full h-full md:h-[600px] md:max-w-md md:rounded-3xl border-none md:border border-white/10 shadow-2xl flex flex-col">
+    <div className="fixed inset-0 z-200 bg-[#0f172a] md:bg-black/60 md:backdrop-blur-sm flex items-center justify-center p-0 md:p-4">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#1e293b] w-full h-full md:h-150 md:max-w-md md:rounded-3xl border-none md:border border-white/10 shadow-2xl flex flex-col">
         {/* Chat Header */}
         <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#0f172a] pt-safe">
           <div className="flex items-center gap-3">
              <button onClick={onClose} className="md:hidden mr-2"><X size={24} /></button>
-             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">{otherPersonName?.[0]}</div>
+             <div className="w-10 h-10 rounded-full bg-linear-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">{otherPersonName?.[0]}</div>
              <div><h3 className="font-bold text-white">{otherPersonName}</h3><p className="text-xs text-slate-400">{request.description}</p></div>
           </div>
           <button onClick={onClose} className="hidden md:block text-slate-400 hover:text-white"><X size={20} /></button>
