@@ -4,7 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import { db, auth } from "../firebase"; 
 import { 
   collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, 
-  updateDoc, deleteDoc, doc, where, setDoc, increment, limit, getDoc, deleteField 
+  updateDoc, deleteDoc, doc, where, setDoc, increment, limit, getDoc, deleteField,
+  getDocs // <--- 1. ADDED getDocs IMPORT
 } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged, signOut } from "firebase/auth";
@@ -80,6 +81,41 @@ export default function Dashboard() {
 
     return () => { authUnsub(); };
   }, [router]);
+// --- 2. NEW: AUTO-DELETE OLD REQUESTS (Lazy Cleanup) ---
+  useEffect(() => {
+    if (!user) return; // Wait for user to log in
+
+    const cleanupExpiredRequests = async () => {
+      const now = new Date();
+      
+      // FIX: Only query *MY* requests (creatorId == user.uid)
+      // This prevents the "Permission Denied" error because you own these docs.
+      const q = query(
+        collection(db, "requests"), 
+        where("creatorId", "==", user.uid)
+      );
+      
+      const snapshot = await getDocs(q);
+
+      snapshot.forEach(async (document) => {
+        const data = document.data();
+        
+        if (!data.time) return;
+
+        // Calculate Expiration (Event Time + 3 Hours)
+        const eventTime = new Date(data.time);
+        const expirationTime = new Date(eventTime.getTime() + (3 * 60 * 60 * 1000)); 
+
+        // Delete if expired
+        if (now > expirationTime) {
+          console.log(`Deleting my expired request: ${document.id}`);
+          await deleteDoc(doc(db, "requests", document.id));
+        }
+      });
+    };
+
+    cleanupExpiredRequests();
+  }, [user]); // Run whenever user changes
 
   // --- ACTIONS ---
   const handleCreateRequest = async (e: React.FormEvent) => {
@@ -132,7 +168,21 @@ export default function Dashboard() {
     setFormTime(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`);
   };
 
-  const filteredRequests = filter === "ALL" ? requests : requests.filter(r => r.type === filter);
+  // --- 3. UPDATED: FILTERING LOGIC (Hides expired items instantly) ---
+  const filteredRequests = requests.filter(r => {
+    // A. Category Filter
+    if (filter !== "ALL" && r.type !== filter) return false;
+
+    // B. Time Filter (Hide if Event Time + 3 Hours is in the past)
+    if (r.time) {
+      const eventTime = new Date(r.time);
+      const expirationTime = new Date(eventTime.getTime() + (3 * 60 * 60 * 1000));
+      if (new Date() > expirationTime) return false;
+    }
+
+    return true;
+  });
+
   const unreadCount = notifications.filter(n => !n.read).length;
 
   return (
