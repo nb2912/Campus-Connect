@@ -81,6 +81,19 @@ export default function Dashboard() {
   }, [user]);
 
   // 2. HANDLERS
+  // Helper function to clear all messages from a request
+  const clearMessages = async (requestId: string) => {
+    try {
+      const messagesRef = collection(db, "requests", requestId, "messages");
+      const messagesSnap = await getDocs(messagesRef);
+      messagesSnap.forEach(async (msgDoc) => {
+        await deleteDoc(doc(db, "requests", requestId, "messages", msgDoc.id));
+      });
+    } catch (error) {
+      console.error("Error clearing messages:", error);
+    }
+  };
+
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault(); if (!user) return;
     await addDoc(collection(db, "requests"), { type: formType, description: formDesc, time: formTime, createdAt: serverTimestamp(), status: "OPEN", creatorName: user.displayName, creatorEmail: user.email, creatorId: user.uid });
@@ -93,8 +106,21 @@ export default function Dashboard() {
     await setDoc(doc(db, "users", req.creatorId), { points: increment(50) }, { merge: true });
     await setDoc(doc(db, "users", user.uid), { points: increment(50) }, { merge: true });
   };
-  const handleWithdraw = async (req: RideRequest) => { if (user && confirm("Withdraw?")) { await updateDoc(doc(db, "requests", req.id), { status: "OPEN", acceptedBy: deleteField() }); await addDoc(collection(db, "notifications"), { receiverId: req.creatorId, message: `${user.displayName} withdrew.`, type: "WITHDRAW", read: false, createdAt: serverTimestamp() }); await setDoc(doc(db, "users", req.creatorId), { points: increment(-50) }, { merge: true }); await setDoc(doc(db, "users", user.uid), { points: increment(-50) }, { merge: true }); }};
-  const handleDelete = async (id: string) => { if (confirm("Delete?")) await deleteDoc(doc(db, "requests", id)); };
+  const handleWithdraw = async (req: RideRequest) => { 
+    if (user && confirm("Withdraw?")) { 
+      await updateDoc(doc(db, "requests", req.id), { status: "OPEN", acceptedBy: deleteField() }); 
+      await clearMessages(req.id);
+      await addDoc(collection(db, "notifications"), { receiverId: req.creatorId, message: `${user.displayName} withdrew.`, type: "WITHDRAW", read: false, createdAt: serverTimestamp() }); 
+      await setDoc(doc(db, "users", req.creatorId), { points: increment(-50) }, { merge: true }); 
+      await setDoc(doc(db, "users", user.uid), { points: increment(-50) }, { merge: true }); 
+    }
+  };
+  const handleDelete = async (id: string) => { 
+    if (confirm("Delete?")) {
+      await clearMessages(id);
+      await deleteDoc(doc(db, "requests", id)); 
+    }
+  };
   const handleUpdateProfile = async (e: React.FormEvent) => { e.preventDefault(); const fd = new FormData(e.target as HTMLFormElement); await setDoc(doc(db, "users", user.uid), { phoneNumber: fd.get("phone"), address: fd.get("address"), displayName: fd.get("name") }, { merge: true }); setIsProfileEditOpen(false); };
   const setQuickDate = (d: number) => { const date = addDays(new Date(), d); const pad = (n: number) => n < 10 ? `0${n}` : n; setFormTime(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`); };
 
