@@ -2,15 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import { db } from "../firebase"; 
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
 import { motion } from "framer-motion";
-import { X, Send } from "lucide-react";
+import { X, Send, User } from "lucide-react";
+import { format } from "date-fns";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { RideRequest } from "@/types"; // Make sure types.ts exists
+import type { RideRequest } from "@/types";
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
 interface ChatProps {
-  request: RideRequest;
+  request: any; // Changed to 'any' to handle dynamic fields safely
   currentUser: any;
   onClose: () => void;
 }
@@ -20,53 +21,149 @@ export default function ChatWindow({ request, currentUser, onClose }: ChatProps)
   const [newMessage, setNewMessage] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   
+  // 1. Fetch Messages
   useEffect(() => { 
     const q = query(collection(db, "requests", request.id, "messages"), orderBy("createdAt", "asc")); 
     const unsub = onSnapshot(q, (s) => setMessages(s.docs.map(d => ({ id: d.id, ...d.data() })))); 
     return () => unsub(); 
   }, [request.id]);
   
+  // 2. Auto-scroll to bottom
   useEffect(() => { 
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; 
   }, [messages]);
   
+  // 3. Send Message
   const sendMessage = async (e: React.FormEvent) => { 
     e.preventDefault(); 
     if (!newMessage.trim()) return; 
     await addDoc(collection(db, "requests", request.id, "messages"), { 
       text: newMessage, 
       senderId: currentUser.uid, 
-      senderName: currentUser.displayName, 
+      senderName: currentUser.displayName,
+      senderPhoto: currentUser.photoURL, 
       createdAt: serverTimestamp() 
     }); 
     setNewMessage(""); 
   };
   
-  const otherPersonName = request.creatorId === currentUser.uid ? request.acceptedByName : request.creatorName;
+  // --- FIXED HEADER LOGIC ---
+  // A plan is a "Group" if capacity > 1 OR if it has a participants array
+  const isGroup = (request.capacity && request.capacity > 1) || (request.participants?.length || 0) > 1;
   
+  let headerTitle = "Chat";
+  if (isGroup) {
+      headerTitle = `${request.type} Squad`;
+  } else {
+      // 1-on-1 Logic
+      if (request.creatorId === currentUser.uid) {
+          // If I am Creator, show the Other Person's name (or "Buddy" if undefined)
+          headerTitle = request.acceptedByName || "Future Buddy";
+      } else {
+          // If I am Joiner, show Creator's name
+          headerTitle = request.creatorName || "Host";
+      }
+  }
+
+  const subTitle = isGroup 
+      ? `${request.participants?.length || 1} / ${request.capacity || "?"} members` 
+      : request.description;
+  // --------------------------
+
   return (
-    <div className="fixed inset-0 z-[200] bg-[#0f172a] md:bg-black/60 md:backdrop-blur-sm flex items-center justify-center p-0 md:p-4">
-      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-[#1e293b] w-full h-full md:h-[600px] md:max-w-md md:rounded-3xl border-none md:border border-white/10 shadow-2xl flex flex-col">
-        {/* Chat Header */}
-        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-[#0f172a] pt-safe">
-          <div className="flex items-center gap-3">
-             <button onClick={onClose} className="md:hidden mr-2"><X size={24} /></button>
-             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white font-bold">{otherPersonName?.[0]}</div>
-             <div><h3 className="font-bold text-white">{otherPersonName}</h3><p className="text-xs text-slate-400">{request.description}</p></div>
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-md flex items-end md:items-center justify-center p-0 md:p-4">
+      <motion.div 
+        initial={{ y: "100%", opacity: 0 }} 
+        animate={{ y: 0, opacity: 1 }} 
+        exit={{ y: "100%" }}
+        transition={{ type: "spring", damping: 25, stiffness: 300 }}
+        className="bg-[#020617] w-full h-[90vh] md:h-[650px] md:max-w-md rounded-t-[2rem] md:rounded-[2rem] border border-white/10 shadow-2xl flex flex-col overflow-hidden relative"
+      >
+        
+        {/* --- 1. GLASS HEADER --- */}
+        <div className="absolute top-0 inset-x-0 h-20 bg-[#020617]/80 backdrop-blur-xl border-b border-white/5 flex items-center justify-between px-6 z-10">
+          <div className="flex items-center gap-4">
+             {/* Header Avatar */}
+             <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-violet-600 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-indigo-500/20">
+                {headerTitle?.[0] || <User size={18}/>}
+             </div>
+             <div>
+                <h3 className="font-bold text-white text-base leading-tight">{headerTitle}</h3>
+                <p className="text-xs text-slate-400 font-medium truncate max-w-[150px]">{subTitle}</p>
+             </div>
           </div>
-          <button onClick={onClose} className="hidden md:block text-slate-400 hover:text-white"><X size={20} /></button>
+          <div className="flex gap-2">
+             <button onClick={onClose} className="w-9 h-9 flex items-center justify-center rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors">
+                <X size={20} />
+             </button>
+          </div>
         </div>
         
-        {/* Messages */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#0f172a]/50">
-          {messages.map((msg) => { const isMe = msg.senderId === currentUser.uid; return (<div key={msg.id} className={cn("flex flex-col", isMe ? "items-end" : "items-start")}><div className={cn("max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed", isMe ? "bg-indigo-600 text-white rounded-tr-sm" : "bg-white/10 text-slate-200 rounded-tl-sm")}>{msg.text}</div></div>); })}
+        {/* --- 2. MESSAGE AREA --- */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 pt-24 space-y-6 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-fixed">
+          {messages.length === 0 && (
+            <div className="text-center mt-20 opacity-40">
+                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <span className="text-2xl">👋</span>
+                </div>
+                <p className="text-sm text-slate-400">Say hello to the group!</p>
+            </div>
+          )}
+
+          {messages.map((msg, i) => { 
+            const isMe = msg.senderId === currentUser.uid; 
+            const isSequential = i > 0 && messages[i-1].senderId === msg.senderId;
+
+            return (
+              <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                key={msg.id} 
+                className={cn("flex w-full", isMe ? "justify-end" : "justify-start")}
+              >
+                {!isMe && !isSequential && (
+                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 mr-2 flex-shrink-0 overflow-hidden mt-1">
+                        {msg.senderPhoto ? <img src={msg.senderPhoto} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-500"><User size={12}/></div>}
+                    </div>
+                )}
+                {!isMe && isSequential && <div className="w-10" />}
+
+                <div className={cn(
+                    "max-w-[75%] px-5 py-3 text-sm relative group transition-all",
+                    isMe 
+                        ? "bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-2xl rounded-tr-sm shadow-lg shadow-indigo-500/10" 
+                        : "bg-[#1e293b] border border-white/5 text-slate-200 rounded-2xl rounded-tl-sm shadow-md"
+                )}>
+                    {!isMe && !isSequential && <p className="text-[10px] font-bold text-indigo-400 mb-1">{msg.senderName}</p>}
+                    <p className="leading-relaxed text-[15px]">{msg.text}</p>
+                    <span className={cn("text-[9px] mt-1 block opacity-60", isMe ? "text-indigo-100" : "text-slate-500")}>
+                        {msg.createdAt?.seconds ? format(new Date(msg.createdAt.seconds * 1000), 'h:mm a') : '...'}
+                    </span>
+                </div>
+              </motion.div>
+            ); 
+          })}
         </div>
         
-        {/* Input */}
-        <form onSubmit={sendMessage} className="p-3 bg-[#0f172a] border-t border-white/10 flex gap-2 pb-safe md:pb-3">
-          <input value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Message..." className="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-3 text-base text-white focus:outline-none focus:border-indigo-500 transition-colors" />
-          <button type="submit" className="p-3 bg-indigo-600 rounded-full text-white hover:bg-indigo-700 transition-colors"><Send size={20} /></button>
-        </form>
+        {/* --- 3. FLOATING INPUT --- */}
+        <div className="p-4 bg-[#020617] border-t border-white/5">
+            <form onSubmit={sendMessage} className="flex gap-2 items-end bg-[#1e293b] border border-white/10 rounded-[1.5rem] p-1.5 pl-4 shadow-lg focus-within:ring-2 focus-within:ring-indigo-500/50 transition-all">
+            <input 
+                value={newMessage} 
+                onChange={(e) => setNewMessage(e.target.value)} 
+                placeholder="Type a message..." 
+                className="flex-1 bg-transparent text-white text-sm focus:outline-none py-3 placeholder:text-slate-500" 
+            />
+            <button 
+                type="submit" 
+                disabled={!newMessage.trim()}
+                className="w-10 h-10 bg-indigo-600 rounded-full text-white flex items-center justify-center hover:bg-indigo-500 disabled:bg-slate-700 disabled:text-slate-500 transition-all active:scale-90"
+            >
+                <Send size={18} className="ml-0.5" />
+            </button>
+            </form>
+        </div>
+
       </motion.div>
     </div>
   );

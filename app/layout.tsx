@@ -27,9 +27,9 @@ export const metadata: Metadata = {
   },
 };
 
-// 2. Configure Viewport (Prevent Zooming for App-like feel)
+// 2. Configure Viewport (Prevent Zooming & Set Theme Color)
 export const viewport: Viewport = {
-  themeColor: "#0f172a",
+  themeColor: "#0f172a", // Matches the Slate-900 background
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -44,7 +44,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        // Added 'bg-[#0f172a] text-slate-100' to prevent white flash on load
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0f172a] text-slate-100`}
       >
         {children}
       </body>

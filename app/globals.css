@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Force Dark Theme Colors for the Glassmorphism Look */
+  --background: #0f172a; /* Slate 900 */
+  --foreground: #f8fafc; /* Slate 50 */
 }
 
 @theme inline {
@@ -12,15 +13,56 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* Reset & Base Styles */
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden; /* Prevent horizontal scroll on mobile */
+}
+
+/* --- UTILITIES FOR APP FEEL --- */
+
+/* 1. Hide Scrollbar but keep functionality (Clean Look) */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+/* 2. Glassmorphism Utilities */
+.glass {
+    background: rgba(30, 41, 59, 0.7); /* Slate-800 with opacity */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-strong {
+    background: rgba(15, 23, 42, 0.85); /* Slate-900 with opacity */
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 3. Mobile Safe Areas (for iPhone Notch/Home Bar) */
+.pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+}
+.pt-safe {
+    padding-top: env(safe-area-inset-top);
+}
+
+/* 4. Animations */
+@keyframes float {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+    100% { transform: translateY(0px); }
+}
+.animate-float {
+    animation: float 4s ease-in-out infinite;
 }
