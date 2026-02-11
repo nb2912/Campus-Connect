@@ -12,6 +12,7 @@ interface UserProfile {
   photoURL: string;
   phoneNumber?: string;
   address?: string;
+  upiId?: string;
 }
 
 interface AuthContextType {

@@ -17,13 +17,13 @@ export default function Footer() {
         <div className="flex gap-6 text-sm font-medium text-slate-400">
            <a href="#" className="hover:text-white transition-colors">Guidelines</a>
            <a href="#" className="hover:text-white transition-colors">Safety</a>
-           <a href="mailto:support@srmsocial.com" className="hover:text-white transition-colors">Support</a>
+           <a href="mailto:nihalbasaniwal2912@gmail.com" className="hover:text-white transition-colors">Support</a>
         </div>
 
         {/* COPYRIGHT & CREDIT */}
         <div className="text-xs text-slate-600">
            <p>© 2026 SRM Social. All rights reserved.</p>
-           <p className="mt-1">Built with ❤️ by <span className="text-slate-400 font-bold">Nihal Basaniwal</span></p>
+          
         </div>
       </div>
     </footer>

@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { db, auth } from "../firebase"; 
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, deleteDoc, doc, where, setDoc, increment, limit, getDocs, deleteField, getDoc, arrayUnion, arrayRemove, runTransaction } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { format, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plane, Dumbbell, Train, Pizza, BookOpen, Ticket, Calendar, MessageCircle, Check, Trophy, Crown, AlertTriangle, LogOut as LeaveIcon, Phone, Home, X, Trash2, User, Users, Info } from "lucide-react";
+import { Plane, Dumbbell, Train, Pizza, BookOpen, Ticket, Calendar, MessageCircle, Check, Trophy, Crown, AlertTriangle, LogOut as LeaveIcon, Phone, Home, X, Trash2, User, Users, Info, Bell, Zap, Plus } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Image from "next/image";
@@ -27,6 +27,7 @@ const CATEGORIES = {
   FOOD: { label: "Food", icon: Pizza, color: "text-pink-400", bg: "bg-pink-500/10", border: "border-pink-500/20" },
   STUDY: { label: "Study", icon: BookOpen, color: "text-violet-400", bg: "bg-violet-500/10", border: "border-violet-500/20" },
   MOVIE: { label: "Movie", icon: Ticket, color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20" },
+  OTHER: { label: "Other", icon: Plus, color: "text-slate-400", bg: "bg-white/5", border: "border-white/10" },
 };
 type CategoryKey = keyof typeof CATEGORIES;
 
@@ -38,6 +39,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
   const [feedLimit, setFeedLimit] = useState(12);
   const [hasMore, setHasMore] = useState(true);
+  const [fetching, setFetching] = useState(true);
   
   const [activeTab, setActiveTab] = useState<"FEED" | "LEADERBOARD" | "ALERTS" | "PROFILE">("FEED");
   const [filter, setFilter] = useState<CategoryKey | "ALL">("ALL");
@@ -48,8 +50,14 @@ export default function Dashboard() {
   // FORM
   const [formType, setFormType] = useState<CategoryKey>("CAB");
   const [formDesc, setFormDesc] = useState("");
-  const [formTime, setFormTime] = useState("");
+  const [formStartLoc, setFormStartLoc] = useState("");
+  const [formEndLoc, setFormEndLoc] = useState("");
+  const [formRestaurant, setFormRestaurant] = useState("");
+  const [formCustomType, setFormCustomType] = useState("");
+  const [formDay, setFormDay] = useState<"TODAY" | "TOMORROW">("TODAY");
+  const [formHour, setFormHour] = useState("12:00");
   const [formCapacity, setFormCapacity] = useState("2");
+  const isInitialLoad = useRef(true);
   const router = useRouter();
 
   // HELPERS
@@ -66,12 +74,36 @@ export default function Dashboard() {
     if (!user) return;
     
     // Listen for data
-    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where("receiverId", "==", user.uid), orderBy("createdAt", "desc")), (snap) => setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where("receiverId", "==", user.uid), orderBy("createdAt", "desc")), (snap) => {
+      setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      
+      if (!isInitialLoad.current) {
+        snap.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const data = change.doc.data();
+            sendBrowserNotification("New Activity update!", data.message);
+          }
+        });
+      }
+    });
     
     const q = query(collection(db, "requests"), orderBy("createdAt", "desc"), limit(feedLimit));
     const unsubRequests = onSnapshot(q, (snap) => {
       setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       setHasMore(snap.docs.length === feedLimit);
+      setFetching(false);
+
+      if (!isInitialLoad.current) {
+        snap.docChanges().forEach((change) => {
+          if (change.type === "added") {
+            const data = change.doc.data();
+            if (data.creatorId !== user.uid) {
+              sendBrowserNotification(`New ${data.type} Plan!`, `${data.creatorName} just posted: ${data.description || data.customType || 'New plan'}`);
+            }
+          }
+        });
+      }
+      isInitialLoad.current = false;
     });
 
     const unsubLeaderboard = onSnapshot(query(collection(db, "users"), orderBy("points", "desc"), limit(10)), (snap) => setLeaderboard(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
@@ -98,12 +130,28 @@ export default function Dashboard() {
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault(); if (!user) return;
+    const date = formDay === "TODAY" ? new Date() : addDays(new Date(), 1);
+    const [h, m] = formHour.split(":");
+    date.setHours(parseInt(h));
+    date.setMinutes(parseInt(m));
+    const combinedTime = date.toISOString();
+
     await addDoc(collection(db, "requests"), { 
-      type: formType, description: formDesc, time: formTime, capacity: Number(formCapacity), 
+      type: formType, 
+      description: formDesc,
+      startLoc: formStartLoc,
+      endLoc: formEndLoc,
+      restaurant: formRestaurant,
+      customType: formCustomType,
+      time: combinedTime, 
+      capacity: Number(formCapacity), 
       participants: [], createdAt: serverTimestamp(), status: "OPEN", 
-      creatorName: user.displayName, creatorEmail: user.email, creatorId: user.uid, creatorPhoto: user.photoURL 
+      creatorName: user.displayName, creatorEmail: user.email, creatorId: user.uid, creatorPhoto: user.photoURL,
+      creatorUpi: userProfile?.upiId || ""
     });
-    setIsModalOpen(false); setFormDesc(""); setFormTime(""); setFormCapacity("2"); setActiveTab("FEED");
+    setIsModalOpen(false); 
+    setFormDesc(""); setFormStartLoc(""); setFormEndLoc(""); setFormRestaurant(""); setFormCustomType(""); setFormDay("TODAY"); setFormHour("12:00"); setFormCapacity("2"); 
+    setActiveTab("FEED");
     showToast("Plan created successfully!");
   };
 
@@ -142,7 +190,8 @@ export default function Dashboard() {
         transaction.set(doc(db, "users", data.creatorId), { points: increment(50) }, { merge: true });
         transaction.set(doc(db, "users", user.uid), { points: increment(50) }, { merge: true });
       });
-      showToast("Joined the group!");
+      // Micro-interaction celebration
+      showToast("Joined the squad! 🚀");
     } catch (error) { showToast(typeof error === 'string' ? error : "Failed to join", "error"); }
   };
 
@@ -165,12 +214,39 @@ export default function Dashboard() {
     await setDoc(doc(db, "users", user.uid), { 
       phoneNumber: fd.get("phone"), 
       address: fd.get("address"), 
-      displayName: fd.get("name") 
+      displayName: fd.get("name"),
+      upiId: fd.get("upi")
     }, { merge: true }); 
     setIsProfileEditOpen(false); 
     showToast("Profile updated!"); 
   };
-  const setQuickDate = (d: number) => { const date = addDays(new Date(), d); const pad = (n: number) => n < 10 ? `0${n}` : n; setFormTime(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`); };
+
+  const requestNotificationPermission = async () => {
+    if ("Notification" in window) {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        showToast("Alerts enabled! 🔔");
+        new Notification("Notifications Enabled", { body: "You will now receive alerts for new plans and joins." });
+      }
+    }
+  };
+
+  const sendBrowserNotification = (title: string, body: string) => {
+    if ("Notification" in window && Notification.permission === "granted") {
+      new Notification(title, { body, icon: "/favicon.ico" });
+    }
+  };
+
+  const handlePayment = (creatorUpi: string, desc: string) => {
+    const upiUrl = `upi://pay?pa=${creatorUpi}&pn=SRMSocial&tn=Split for ${desc}&cu=INR`;
+    window.location.href = upiUrl;
+  };
+  const setQuickDate = (d: number) => { 
+    const date = addDays(new Date(), d); 
+    const pad = (n: number) => n < 10 ? `0${n}` : n; 
+    setFormDay(d === 0 ? "TODAY" : "TOMORROW");
+    setFormHour(`${pad(date.getHours())}:${pad(date.getMinutes())}`); 
+  };
 
   const filteredRequests = requests.filter(r => (filter === "ALL" || r.type === filter) && (!r.time || new Date() <= new Date(new Date(r.time).getTime() + (3 * 3600000))));
 
@@ -182,9 +258,11 @@ export default function Dashboard() {
       {/* TOAST NOTIFICATION */}
       <AnimatePresence>
         {toast && (
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={cn("fixed top-24 left-1/2 -translate-x-1/2 z-[100] px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 border", toast.type === 'success' ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-400")}>
-                {toast.type === 'success' ? <Check size={16} /> : <AlertTriangle size={16} />}
-                <span className="text-sm font-bold">{toast.msg}</span>
+            <motion.div initial={{ opacity: 0, scale: 0.5, y: 20, x: "-50%" }} animate={{ opacity: 1, scale: 1, y: 0, x: "-50%" }} exit={{ opacity: 0, scale: 0.5, x: "-50%" }} className={cn("fixed bottom-24 md:top-24 md:bottom-auto left-1/2 z-[100] px-8 py-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-3 border backdrop-blur-2xl transition-all", toast.type === 'success' ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-100" : "bg-red-500/20 border-red-500/30 text-red-100")}>
+                <div className={cn("w-6 h-6 rounded-full flex items-center justify-center", toast.type === 'success' ? "bg-indigo-500" : "bg-red-500")}>
+                    {toast.type === 'success' ? <Check size={14} className="text-white" /> : <AlertTriangle size={14} className="text-white" />}
+                </div>
+                <span className="text-sm font-bold tracking-tight">{toast.msg}</span>
             </motion.div>
         )}
       </AnimatePresence>
@@ -193,22 +271,57 @@ export default function Dashboard() {
         
         {activeTab === "FEED" && (
           <>
-            <div className="mb-10 space-y-6">
-              <div className="hidden md:block">
-                  <h1 className="text-5xl font-bold mb-2 text-white">Find your squad.</h1>
-                  <p className="text-slate-400">Join a group or create your own plan instantly.</p>
+            <div className="mb-14 space-y-8">
+              <div className="flex justify-between items-end">
+                  <div className="hidden md:block">
+                      <h1 className="text-6xl font-extrabold mb-3 text-white tracking-tight">Feed.</h1>
+                      <p className="text-slate-400 text-lg">Your campus network, live.</p>
+                  </div>
+                  <button onClick={requestNotificationPermission} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                      <Bell size={14} /> Enable Alerts
+                  </button>
               </div>
-              <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                <button onClick={() => setFilter("ALL")} className={cn("px-5 py-2.5 rounded-full text-sm font-bold border shrink-0 transition-all", filter === "ALL" ? "bg-white text-black border-white" : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10")}>All</button>
-                {Object.entries(CATEGORIES).map(([key, cat]) => (
-                  <button key={key} onClick={() => setFilter(key as CategoryKey)} className={cn("px-5 py-2.5 rounded-full text-sm font-bold border flex items-center gap-2 shrink-0 transition-all", filter === key ? `bg-white/10 border-white/20 text-white` : "bg-white/5 text-slate-400 border-white/5 hover:bg-white/10")}><cat.icon size={16} className={filter === key ? cat.color : ""} />{cat.label}</button>
-                ))}
+
+              {/* QUICK ACTIONS: LIVE NOW */}
+              <div className="space-y-4">
+                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400 ml-1">Live Soon / Active</h2>
+                  <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                      {requests.filter(r => r.time && new Date(r.time).getTime() - new Date().getTime() < 3600000 && new Date(r.time).getTime() > new Date().getTime()).length === 0 ? (
+                          <div className="px-6 py-4 rounded-3xl bg-white/5 border border-white/5 text-xs text-slate-500 font-medium">No urgent plans right now.</div>
+                      ) : (
+                          requests.filter(r => r.time && new Date(r.time).getTime() - new Date().getTime() < 3600000 && new Date(r.time).getTime() > new Date().getTime()).map(r => (
+                              <motion.div key={r.id} whileHover={{ scale: 1.05 }} className="flex-shrink-0 w-64 p-4 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-white/10 backdrop-blur-md">
+                                  <div className="flex items-center gap-3 mb-2">
+                                      <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center"><Zap size={14} className="text-yellow-400 fill-yellow-400" /></div>
+                                      <span className="text-[10px] font-black uppercase tracking-wider text-white">Starting Soon</span>
+                                  </div>
+                                  <p className="text-sm font-bold text-white truncate">{r.description}</p>
+                                  <p className="text-[10px] text-indigo-300 font-bold mt-1">{format(new Date(r.time), 'h:mm a')}</p>
+                              </motion.div>
+                          ))
+                      )}
+                  </div>
+              </div>
+
+              {/* SMART FLOATING FILTER PILL */}
+              <div className="sticky top-24 z-40 -mx-4 px-4 md:mx-0 md:px-0 pointer-events-none">
+                <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide pointer-events-auto bg-[#0f172a]/60 backdrop-blur-xl p-2 rounded-3xl border border-white/5 shadow-2xl w-fit mx-auto md:mx-0">
+                    <button onClick={() => setFilter("ALL")} className={cn("px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all", filter === "ALL" ? "bg-white text-black shadow-xl scale-110" : "bg-white/5 text-slate-500 hover:text-white")}>All</button>
+                    {Object.entries(CATEGORIES).map(([key, cat]) => (
+                    <button key={key} onClick={() => setFilter(key as CategoryKey)} className={cn("px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all shrink-0", filter === key ? `bg-white/10 text-white border border-white/10` : "text-slate-500 hover:text-white hover:bg-white/5")}>
+                        <cat.icon size={14} className={cn("transition-colors", filter === key ? cat.color : "text-slate-600")} />
+                        {cat.label}
+                    </button>
+                    ))}
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <AnimatePresence mode="popLayout">
-                {filteredRequests.length === 0 ? (
+                {fetching ? (
+                  [1,2,3,4,5,6].map(i => <SkeletonCard key={i} />)
+                ) : filteredRequests.length === 0 ? (
                     <div className="col-span-full text-center py-20 opacity-50">
                         <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4"><Info size={32}/></div>
                         <p>No plans found. Be the first to create one!</p>
@@ -226,14 +339,17 @@ export default function Dashboard() {
                   const seats = Array.from({ length: capacity }).map((_, i) => i < joinedCount ? "filled" : "empty");
 
                   return (
-                    <motion.div key={req.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={cn("relative p-6 rounded-[2rem] border backdrop-blur-xl transition-all group hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10", isFull ? "bg-[#0f172a]/50 border-white/5 opacity-75" : "bg-[#1e293b]/60 border-white/5")}>
+                    <motion.div key={req.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={cn("relative p-6 rounded-[2rem] border backdrop-blur-xl transition-all group hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 overflow-hidden", isFull ? "bg-[#0f172a]/50 border-white/5 opacity-75" : "bg-[#1e293b]/60 border-white/5")}>
                       
+                      {/* CATEGORY MESH BACKGROUND */}
+                      <div className={cn("absolute -top-24 -right-24 w-48 h-48 blur-[80px] opacity-30 group-hover:opacity-50 transition-opacity", Category.bg.split(" ")[0].replace("/10", ""))} />
+
                       {/* Top Row: User & Time */}
-                      <div className="flex justify-between items-start mb-5">
+                      <div className="flex justify-between items-start mb-5 relative z-10">
                           <div className="flex items-center gap-3">
-                              <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg", Category.bg, Category.border, "border")}><Category.icon size={20} className={Category.color} /></div>
+                               <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg", Category.bg, Category.border, "border")}><Category.icon size={20} className={Category.color} /></div>
                               <div>
-                                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{req.type}</p>
+                                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{req.type === "OTHER" ? (req.customType || "Other") : req.type}</p>
                                   <div className="flex items-center gap-1.5 mt-0.5">
                                       {req.creatorPhoto ? <Image src={req.creatorPhoto} alt="" width={16} height={16} className="w-4 h-4 rounded-full" /> : <User size={12} className="text-slate-500"/>}
                                       <span className="text-xs text-slate-300 font-bold">{req.creatorName?.split(" ")[0]}</span>
@@ -243,13 +359,30 @@ export default function Dashboard() {
                           <span className="text-xs font-bold text-slate-400 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">{req.createdAt?.seconds ? format(new Date(req.createdAt.seconds * 1000), 'h:mm a') : 'Now'}</span>
                       </div>
 
-                      {/* Content */}
-                      <h3 className={cn("text-xl font-bold leading-tight mb-4 text-white", isFull && "text-slate-500 line-through decoration-slate-600")}>{req.description}</h3>
+                       {/* Content */}
+                      {req.type === "CAB" ? (
+                          <div className="mb-4 space-y-2">
+                              <div className="flex items-center gap-3">
+                                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                  <p className="text-white font-bold truncate">{req.startLoc || "Pickup"}</p>
+                              </div>
+                              <div className="ml-1 w-0.5 h-4 bg-white/10" />
+                              <div className="flex items-center gap-3">
+                                  <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
+                                  <p className="text-white font-bold truncate">{req.endLoc || "Destination"}</p>
+                              </div>
+                          </div>
+                      ) : (
+                          <h3 className={cn("text-xl font-bold leading-tight mb-4 text-white", isFull && "text-slate-500 line-through decoration-slate-600")}>
+                              {req.type === "FOOD" ? `Order from: ${req.restaurant}` : req.type === "OTHER" ? `${req.customType}: ${req.description}` : req.description}
+                          </h3>
+                      )}
                       <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 w-fit mb-6 border border-white/5">
                           <Calendar size={14} className="text-indigo-400" />
                           <span className="text-sm font-bold text-slate-200">{req.time ? format(new Date(req.time), 'MMM d, h:mm a') : 'Flexible Time'}</span>
+
                       </div>
-                      
+
                       {/* Footer: Seats & Action */}
                       <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
                           <div className="flex gap-1">
@@ -258,11 +391,17 @@ export default function Dashboard() {
                               ))}
                           </div>
 
-                          <div className="flex gap-2">
+                           <div className="flex gap-2">
                               {(isMine || iJoined) && (
                                   <button onClick={() => setActiveChat(req)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white border border-white/10 transition-colors"><MessageCircle size={18} /></button>
                               )}
-                              
+
+                              {iJoined && !isMine && req.creatorUpi && (
+                                  <button onClick={() => handlePayment(req.creatorUpi, req.description)} className="flex items-center gap-2 px-4 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all font-bold text-xs uppercase tracking-wider">
+                                      Pay UPI
+                                  </button>
+                              )}
+
                               {isMine ? (
                                   <button onClick={() => handleDelete(req.id)} className="w-10 h-10 rounded-full bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center text-red-400 border border-red-500/20 transition-colors"><Trash2 size={18} /></button>
                               ) : iJoined ? (
@@ -282,8 +421,8 @@ export default function Dashboard() {
 
             {hasMore && filteredRequests.length > 0 && (
               <div className="mt-12 flex justify-center pb-20">
-                <button 
-                  onClick={handleLoadMore} 
+                <button
+                  onClick={handleLoadMore}
                   className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-slate-400 font-bold hover:bg-white/10 hover:text-white transition-all"
                 >
                   Load More Plans
@@ -317,25 +456,70 @@ export default function Dashboard() {
                 <div className="grid grid-cols-2 gap-4"><button onClick={() => setIsProfileEditOpen(true)} className="py-4 rounded-2xl bg-white text-black font-bold hover:scale-[1.02] transition-transform">Edit Profile</button><button onClick={() => signOut(auth)} className="py-4 rounded-2xl bg-red-500/10 text-red-400 font-bold border border-red-500/20 hover:bg-red-500/20 transition-colors">Sign Out</button></div>
             </div>
         )}
-        
+
         <Footer />
       </main>
 
       <BottomNav activeTab={activeTab} setActiveTab={setActiveTab} unreadCount={notifications.filter(n => !n.read).length} onOpenModal={() => setIsModalOpen(true)} user={user} />
 
-      {/* CREATE MODAL */}
+      {/* CREATE MODAL / BOTTOM SHEET */}
       <AnimatePresence>
       {isModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4">
-            <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} className="bg-[#1e293b] w-full md:w-[500px] rounded-t-3xl md:rounded-3xl border-t md:border border-white/10 p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="bg-[#1e293b] w-full md:w-[500px] rounded-t-[2.5rem] md:rounded-[2.5rem] border-t md:border border-white/10 p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+            >
+                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 md:hidden" />
                 <div className="flex justify-between items-center mb-8"><h2 className="text-3xl font-bold text-white">New Plan</h2><button onClick={() => setIsModalOpen(false)} className="bg-white/5 p-2 rounded-full hover:bg-white/10"><X size={20} className="text-white" /></button></div>
-                <form onSubmit={handleCreateRequest} className="space-y-6">
+                 <form onSubmit={handleCreateRequest} className="space-y-6 pb-10 md:pb-0">
                     <div className="grid grid-cols-3 gap-3">{Object.entries(CATEGORIES).map(([key, cat]) => (<button key={key} type="button" onClick={() => setFormType(key as CategoryKey)} className={cn("flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all", formType === key ? `bg-white text-black shadow-lg scale-105 border-transparent` : "bg-white/5 border-transparent text-slate-400 hover:bg-white/10")}><cat.icon size={24} className={formType === key ? "text-indigo-600" : ""} /><span className="text-xs font-bold">{cat.label}</span></button>))}</div>
                     <div className="space-y-4">
-                        <input required placeholder="Where are you going?" value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-5 text-white text-lg focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                        {formType === "CAB" ? (
+                            <div className="space-y-3">
+                                <div className="relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-500" />
+                                    <input required placeholder="Start Location " value={formStartLoc} onChange={(e) => setFormStartLoc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-10 pr-5 text-white text-base focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                                </div>
+                                <div className="ml-1 w-0.5 h-4 bg-white/10" />
+                                <div className="relative">
+                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-orange-500" />
+                                    <input required placeholder="End Location" value={formEndLoc} onChange={(e) => setFormEndLoc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-10 pr-5 text-white text-base focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                                </div>
+                            </div>
+                         ) : formType === "FOOD" ? (
+                            <input required placeholder="Where are you ordering from? " value={formRestaurant} onChange={(e) => setFormRestaurant(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-5 text-white text-lg focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                        ) : formType === "OTHER" ? (
+                            <div className="space-y-3">
+                                <input required placeholder="Activity Name" value={formCustomType} onChange={(e) => setFormCustomType(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-5 text-white text-lg focus:outline-none focus:border-indigo-500 placeholder:text-slate-600 font-bold" />
+                                <input required placeholder="Details " value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-5 text-white text-base focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                            </div>
+                        ) : (
+                            <input required placeholder="Short description of your plan..." value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-5 text-white text-lg focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                        )}
+
                         <div className="flex gap-4">
-                            <div className="flex-1"><label className="text-xs text-slate-500 uppercase font-bold ml-2 mb-1 block">When</label><input type="datetime-local" required value={formTime} onChange={(e) => setFormTime(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-3 px-4 text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark]" /></div>
-                            <div className="w-24"><label className="text-xs text-slate-500 uppercase font-bold ml-2 mb-1 block">Seats</label><div className="relative"><Users size={16} className="absolute left-3 top-3.5 text-slate-500" /><input type="number" min="2" max="10" required value={formCapacity} onChange={(e) => setFormCapacity(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-3 pl-9 pr-2 text-white focus:outline-none focus:border-indigo-500" /></div></div>
+                            <div className="flex-1">
+                                <label className="text-xs text-slate-500 uppercase font-bold ml-2 mb-2 block">Day</label>
+                                <div className="flex gap-2 p-1 bg-black/20 rounded-2xl border border-white/5">
+                                    <button type="button" onClick={() => setFormDay("TODAY")} className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold transition-all", formDay === "TODAY" ? "bg-white text-black shadow-lg" : "text-slate-500 hover:text-white")}>Today</button>
+                                    <button type="button" onClick={() => setFormDay("TOMORROW")} className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold transition-all", formDay === "TOMORROW" ? "bg-white text-black shadow-lg" : "text-slate-500 hover:text-white")}>Tomorrow</button>
+                                </div>
+                            </div>
+                            <div className="flex-1 border-l border-white/5 pl-4">
+                                <label className="text-xs text-slate-500 uppercase font-bold ml-2 mb-2 block">Time</label>
+                                <input type="time" required value={formHour} onChange={(e) => setFormHour(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-2.5 px-4 text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark]" />
+                            </div>
+                            <div className="w-24 border-l border-white/5 pl-4">
+                                <label className="text-xs text-slate-500 uppercase font-bold ml-2 mb-2 block">Seats</label>
+                                <div className="relative">
+                                    <Users size={14} className="absolute left-3 top-3.5 text-slate-500" />
+                                    <input type="number" min="2" max="10" required value={formCapacity} onChange={(e) => setFormCapacity(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-2.5 pl-8 pr-2 text-white text-sm focus:outline-none focus:border-indigo-500" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl text-lg shadow-lg shadow-indigo-500/25 transition-all active:scale-95">Post Request</button>
@@ -345,12 +529,62 @@ export default function Dashboard() {
       )}
       </AnimatePresence>
 
-      {/* EDIT PROFILE MODAL */}
+      {/* EDIT PROFILE MODAL / BOTTOM SHEET */}
+      <AnimatePresence>
       {isProfileEditOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4"><motion.div initial={{ y: "100%" }} animate={{ y: 0 }} className="bg-[#1e293b] w-full md:w-96 rounded-t-3xl md:rounded-3xl border-t md:border border-white/10 p-6 shadow-2xl relative"><div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-6 md:hidden" /><h2 className="text-xl font-bold mb-6 text-center text-white">Edit Profile</h2><form onSubmit={handleUpdateProfile} className="space-y-4"><input name="name" defaultValue={userProfile?.displayName} className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none" /><input name="phone" defaultValue={userProfile?.phoneNumber} placeholder="Phone" className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none" /><input name="address" defaultValue={userProfile?.address} placeholder="Hostel" className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none" /><div className="flex gap-3 pt-2"><button type="button" onClick={() => setIsProfileEditOpen(false)} className="flex-1 py-3 rounded-2xl bg-white/5 text-white font-bold">Cancel</button><button type="submit" className="flex-1 py-3 rounded-2xl bg-indigo-600 text-white font-bold">Save</button></div></form></motion.div></div>
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4">
+            <motion.div 
+                initial={{ y: "100%" }} 
+                animate={{ y: 0 }} 
+                exit={{ y: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="bg-[#1e293b] w-full md:w-96 rounded-t-[2.5rem] md:rounded-[2.5rem] border-t md:border border-white/10 p-8 shadow-2xl relative"
+            >
+                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 md:hidden" />
+                <h2 className="text-2xl font-bold mb-8 text-center text-white">Edit Profile</h2>
+                <form onSubmit={handleUpdateProfile} className="space-y-4 pb-10 md:pb-0">
+                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-2">Display Name</label><input name="name" defaultValue={userProfile?.displayName} className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none" /></div>
+                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-2">Phone</label><input name="phone" defaultValue={userProfile?.phoneNumber} placeholder="+91 00000 00000" className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none" /></div>
+                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-2">Hostel/Address</label><input name="address" defaultValue={userProfile?.address}  className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none" /></div>
+                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-2">UPI ID (for bill splitting)</label><input name="upi" defaultValue={userProfile?.upiId} placeholder="username@upi" className="w-full bg-black/20 border border-indigo-500/20 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none placeholder:text-slate-600 font-mono text-sm" /></div>
+                    <div className="flex gap-3 pt-4">
+                        <button type="button" onClick={() => setIsProfileEditOpen(false)} className="flex-1 py-4 rounded-2xl bg-white/5 text-slate-300 font-bold hover:bg-white/10 transition-colors">Cancel</button>
+                        <button type="submit" className="flex-1 py-4 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 transition-colors">Save Changes</button>
+                    </div>
+                </form>
+            </motion.div>
+        </div>
       )}
+      </AnimatePresence>
 
       {activeChat && user && <ChatWindow request={activeChat} currentUser={user} onClose={() => setActiveChat(null)} />}
     </div>
   );
+}
+
+// --- SUB-COMPONENTS ---
+
+function SkeletonCard() {
+    return (
+        <div className="p-6 rounded-[2rem] border border-white/5 bg-[#1e293b]/40 animate-pulse">
+            <div className="flex justify-between mb-6">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-white/5" />
+                    <div className="space-y-2">
+                        <div className="h-2 w-16 bg-white/5 rounded" />
+                        <div className="h-3 w-24 bg-white/5 rounded" />
+                    </div>
+                </div>
+                <div className="h-6 w-16 bg-white/5 rounded-full" />
+            </div>
+            <div className="h-6 w-full bg-white/5 rounded-lg mb-4" />
+            <div className="h-4 w-2/3 bg-white/5 rounded-lg mb-8" />
+            <div className="flex justify-between pt-4 border-t border-white/5">
+                <div className="flex gap-1 items-center">
+                    {[1,2,3].map(i => <div key={i} className="w-2.5 h-2.5 rounded-full bg-white/5" />)}
+                </div>
+                <div className="h-10 w-20 bg-white/5 rounded-full" />
+            </div>
+        </div>
+    )
 }
