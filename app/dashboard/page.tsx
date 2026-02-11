@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { db, auth } from "../firebase"; 
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, deleteDoc, doc, where, setDoc, increment, limit, getDocs, deleteField, getDoc, arrayUnion, arrayRemove } from "firebase/firestore";
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, deleteDoc, doc, where, setDoc, increment, limit, getDocs, deleteField, getDoc, arrayUnion, arrayRemove, runTransaction } from "firebase/firestore";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, signOut } from "firebase/auth";
+import { signOut } from "firebase/auth";
 import { format, addDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plane, Dumbbell, Train, Pizza, BookOpen, Ticket, Calendar, MessageCircle, Check, Trophy, Crown, AlertTriangle, LogOut as LeaveIcon, Phone, Home, X, Trash2, User, Users, Info } from "lucide-react";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import Image from "next/image";
+import { useAuth } from "../context/AuthContext";
 
 import Footer from "../components/Footer";
 import { Navbar, BottomNav } from "../components/Navigation";
@@ -29,12 +31,13 @@ const CATEGORIES = {
 type CategoryKey = keyof typeof CATEGORIES;
 
 export default function Dashboard() {
-  const [user, setUser] = useState<any>(null);
-  const [userProfile, setUserProfile] = useState<any>({});
+  const { user, userProfile, loading } = useAuth();
   const [requests, setRequests] = useState<any[]>([]); 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [toast, setToast] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
+  const [feedLimit, setFeedLimit] = useState(12);
+  const [hasMore, setHasMore] = useState(true);
   
   const [activeTab, setActiveTab] = useState<"FEED" | "LEADERBOARD" | "ALERTS" | "PROFILE">("FEED");
   const [filter, setFilter] = useState<CategoryKey | "ALL">("ALL");
@@ -56,22 +59,23 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
-    const authUnsub = onAuthStateChanged(auth, async (u) => {
-      if (!u) router.push("/");
-      else {
-        setUser(u);
-        const userRef = doc(db, "users", u.uid);
-        onSnapshot(userRef, (docSnap) => { if (docSnap.exists()) setUserProfile(docSnap.data()); else setDoc(userRef, { displayName: u.displayName, email: u.email, points: 0, photoURL: u.photoURL }); });
-        onSnapshot(query(collection(db, "notifications"), where("receiverId", "==", u.uid), orderBy("createdAt", "desc")), (snap) => setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-      }
-    });
-    onSnapshot(query(collection(db, "requests"), orderBy("createdAt", "desc")), (snap) => setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    onSnapshot(query(collection(db, "users"), orderBy("points", "desc"), limit(10)), (snap) => setLeaderboard(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-    return () => authUnsub();
-  }, [router]);
+    if (!loading && !user) router.push("/");
+  }, [user, loading, router]);
 
   useEffect(() => {
     if (!user) return;
+    
+    // Listen for data
+    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where("receiverId", "==", user.uid), orderBy("createdAt", "desc")), (snap) => setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    
+    const q = query(collection(db, "requests"), orderBy("createdAt", "desc"), limit(feedLimit));
+    const unsubRequests = onSnapshot(q, (snap) => {
+      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setHasMore(snap.docs.length === feedLimit);
+    });
+
+    const unsubLeaderboard = onSnapshot(query(collection(db, "users"), orderBy("points", "desc"), limit(10)), (snap) => setLeaderboard(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+
     const cleanup = async () => {
       const now = new Date();
       const snapshot = await getDocs(query(collection(db, "requests"), where("creatorId", "==", user.uid)));
@@ -82,7 +86,15 @@ export default function Dashboard() {
       });
     };
     cleanup();
-  }, [user]);
+
+    return () => {
+      unsubNotifications();
+      unsubRequests();
+      unsubLeaderboard();
+    };
+  }, [user, feedLimit]);
+
+  const handleLoadMore = () => setFeedLimit(prev => prev + 12);
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault(); if (!user) return;
@@ -100,16 +112,38 @@ export default function Dashboard() {
     if (req.participants?.includes(user.uid)) return;
     
     try {
-      await updateDoc(doc(db, "requests", req.id), { participants: arrayUnion(user.uid) });
-      const updatedSnap = await getDoc(doc(db, "requests", req.id));
-      const updatedData = updatedSnap.data();
-      if (updatedData && updatedData.participants.length >= updatedData.capacity) await updateDoc(doc(db, "requests", req.id), { status: "FULL" });
-      
-      await addDoc(collection(db, "notifications"), { receiverId: req.creatorId, message: `${user.displayName} joined your ${req.type} group!`, type: "ACCEPT", read: false, createdAt: serverTimestamp() });
-      await setDoc(doc(db, "users", req.creatorId), { points: increment(50) }, { merge: true });
-      await setDoc(doc(db, "users", user.uid), { points: increment(50) }, { merge: true });
+      await runTransaction(db, async (transaction) => {
+        const requestRef = doc(db, "requests", req.id);
+        const requestSnap = await transaction.get(requestRef);
+        
+        if (!requestSnap.exists()) throw "Plan no longer exists";
+        const data = requestSnap.data();
+        const participants = data.participants || [];
+        
+        if (participants.length >= data.capacity) throw "This plan is already full!";
+        if (participants.includes(user.uid)) throw "You already joined this plan";
+
+        // Update request
+        const newParticipants = [...participants, user.uid];
+        const status = newParticipants.length >= data.capacity ? "FULL" : "OPEN";
+        transaction.update(requestRef, { participants: newParticipants, status });
+
+        // Add notification
+        const notificationRef = doc(collection(db, "notifications"));
+        transaction.set(notificationRef, { 
+          receiverId: data.creatorId, 
+          message: `${user.displayName} joined your ${data.type} group!`, 
+          type: "ACCEPT", 
+          read: false, 
+          createdAt: serverTimestamp() 
+        });
+
+        // Add points
+        transaction.set(doc(db, "users", data.creatorId), { points: increment(50) }, { merge: true });
+        transaction.set(doc(db, "users", user.uid), { points: increment(50) }, { merge: true });
+      });
       showToast("Joined the group!");
-    } catch (error) { showToast("Failed to join", "error"); }
+    } catch (error) { showToast(typeof error === 'string' ? error : "Failed to join", "error"); }
   };
 
   const handleLeave = async (req: any) => {
@@ -124,7 +158,18 @@ export default function Dashboard() {
   };
 
   const handleDelete = async (id: string) => { if (confirm("Delete?")) { await deleteDoc(doc(db, "requests", id)); showToast("Deleted plan"); }};
-  const handleUpdateProfile = async (e: React.FormEvent) => { e.preventDefault(); const fd = new FormData(e.target as HTMLFormElement); await setDoc(doc(db, "users", user.uid), { phoneNumber: fd.get("phone"), address: fd.get("address"), displayName: fd.get("name") }, { merge: true }); setIsProfileEditOpen(false); showToast("Profile updated!"); };
+  const handleUpdateProfile = async (e: React.FormEvent) => { 
+    e.preventDefault(); 
+    if (!user) return;
+    const fd = new FormData(e.target as HTMLFormElement); 
+    await setDoc(doc(db, "users", user.uid), { 
+      phoneNumber: fd.get("phone"), 
+      address: fd.get("address"), 
+      displayName: fd.get("name") 
+    }, { merge: true }); 
+    setIsProfileEditOpen(false); 
+    showToast("Profile updated!"); 
+  };
   const setQuickDate = (d: number) => { const date = addDays(new Date(), d); const pad = (n: number) => n < 10 ? `0${n}` : n; setFormTime(`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`); };
 
   const filteredRequests = requests.filter(r => (filter === "ALL" || r.type === filter) && (!r.time || new Date() <= new Date(new Date(r.time).getTime() + (3 * 3600000))));
@@ -190,7 +235,7 @@ export default function Dashboard() {
                               <div>
                                   <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{req.type}</p>
                                   <div className="flex items-center gap-1.5 mt-0.5">
-                                      {req.creatorPhoto ? <img src={req.creatorPhoto} className="w-4 h-4 rounded-full" /> : <User size={12} className="text-slate-500"/>}
+                                      {req.creatorPhoto ? <Image src={req.creatorPhoto} alt="" width={16} height={16} className="w-4 h-4 rounded-full" /> : <User size={12} className="text-slate-500"/>}
                                       <span className="text-xs text-slate-300 font-bold">{req.creatorName?.split(" ")[0]}</span>
                                   </div>
                               </div>
@@ -234,6 +279,17 @@ export default function Dashboard() {
                 })}
               </AnimatePresence>
             </div>
+
+            {hasMore && filteredRequests.length > 0 && (
+              <div className="mt-12 flex justify-center pb-20">
+                <button 
+                  onClick={handleLoadMore} 
+                  className="px-8 py-3 rounded-full bg-white/5 border border-white/10 text-slate-400 font-bold hover:bg-white/10 hover:text-white transition-all"
+                >
+                  Load More Plans
+                </button>
+              </div>
+            )}
           </>
         )}
 
@@ -241,7 +297,7 @@ export default function Dashboard() {
         {activeTab === "LEADERBOARD" && (
           <div className="max-w-xl mx-auto">
              <div className="text-center mb-10"><h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-500 mb-2">Campus Legends</h2><p className="text-slate-400">Earn 50 XP per meetup</p></div>
-             <div className="space-y-4">{leaderboard.map((u, i) => (<div key={u.id} className={cn("flex items-center gap-5 p-5 rounded-[1.5rem] border bg-[#1e293b]/60 backdrop-blur-md border-white/5 transition-transform hover:scale-[1.02]")}><div className={cn("w-10 h-10 flex items-center justify-center font-bold rounded-xl text-lg", i===0 ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20" : "text-slate-500 bg-white/5")}>{i + 1}</div><div className="w-12 h-12 rounded-full bg-white/5 overflow-hidden border border-white/10">{u.photoURL ? <img src={u.photoURL} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User size={20}/></div>}</div><div className="flex-1"><h3 className="font-bold text-white text-base">{u.displayName}</h3><p className="text-xs text-indigo-400 font-bold tracking-wider">{u.points} XP</p></div>{i === 0 && <Crown size={24} className="text-yellow-500 fill-yellow-500 animate-pulse" />}</div>))}</div>
+             <div className="space-y-4">{leaderboard.map((u, i) => (<div key={u.id} className={cn("flex items-center gap-5 p-5 rounded-[1.5rem] border bg-[#1e293b]/60 backdrop-blur-md border-white/5 transition-transform hover:scale-[1.02]")}><div className={cn("w-10 h-10 flex items-center justify-center font-bold rounded-xl text-lg", i===0 ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20" : "text-slate-500 bg-white/5")}>{i + 1}</div><div className="w-12 h-12 rounded-full bg-white/5 overflow-hidden border border-white/10">{u.photoURL ? <Image src={u.photoURL} alt="" width={48} height={48} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User size={20}/></div>}</div><div className="flex-1"><h3 className="font-bold text-white text-base">{u.displayName}</h3><p className="text-xs text-indigo-400 font-bold tracking-wider">{u.points} XP</p></div>{i === 0 && <Crown size={24} className="text-yellow-500 fill-yellow-500 animate-pulse" />}</div>))}</div>
           </div>
         )}
 
@@ -256,7 +312,7 @@ export default function Dashboard() {
         {/* PROFILE TAB */}
         {activeTab === "PROFILE" && (
             <div className="max-w-xl mx-auto space-y-6">
-                <div className="text-center"><div className="w-28 h-28 mx-auto rounded-full border-4 border-white/10 overflow-hidden mb-4 shadow-2xl">{user?.photoURL && <img src={user.photoURL} className="w-full h-full object-cover" />}</div><h2 className="text-3xl font-bold text-white">{userProfile?.displayName || user?.displayName}</h2><p className="text-slate-400">{user?.email}</p><div className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500/10 text-amber-400 font-bold border border-amber-500/20"><Trophy size={16} /> {userProfile?.points || 0} XP</div></div>
+                <div className="text-center"><div className="w-28 h-28 mx-auto rounded-full border-4 border-white/10 overflow-hidden mb-4 shadow-2xl">{user?.photoURL && <Image src={user.photoURL} alt="" width={112} height={112} className="w-full h-full object-cover" />}</div><h2 className="text-3xl font-bold text-white">{userProfile?.displayName || user?.displayName}</h2><p className="text-slate-400">{user?.email}</p><div className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500/10 text-amber-400 font-bold border border-amber-500/20"><Trophy size={16} /> {userProfile?.points || 0} XP</div></div>
                 <div className="bg-[#1e293b]/60 backdrop-blur-md rounded-[2rem] p-8 space-y-6 border border-white/5"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400"><Phone size={18} /></div><div><p className="text-xs text-slate-500 uppercase font-bold tracking-widest">Phone</p><p className="text-white font-medium">{userProfile?.phoneNumber || "Not set"}</p></div></div><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400"><Home size={18} /></div><div><p className="text-xs text-slate-500 uppercase font-bold tracking-widest">Hostel</p><p className="text-white font-medium">{userProfile?.address || "Not set"}</p></div></div></div>
                 <div className="grid grid-cols-2 gap-4"><button onClick={() => setIsProfileEditOpen(true)} className="py-4 rounded-2xl bg-white text-black font-bold hover:scale-[1.02] transition-transform">Edit Profile</button><button onClick={() => signOut(auth)} className="py-4 rounded-2xl bg-red-500/10 text-red-400 font-bold border border-red-500/20 hover:bg-red-500/20 transition-colors">Sign Out</button></div>
             </div>

@@ -6,7 +6,7 @@ import { X, Send, User } from "lucide-react";
 import { format } from "date-fns";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
-import type { RideRequest } from "@/types";
+import Image from "next/image";
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
@@ -122,8 +122,8 @@ export default function ChatWindow({ request, currentUser, onClose }: ChatProps)
                 className={cn("flex w-full", isMe ? "justify-end" : "justify-start")}
               >
                 {!isMe && !isSequential && (
-                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 mr-2 flex-shrink-0 overflow-hidden mt-1">
-                        {msg.senderPhoto ? <img src={msg.senderPhoto} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-500"><User size={12}/></div>}
+                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-white/10 mr-2 flex-shrink-0 overflow-hidden mt-1 relative">
+                        {msg.senderPhoto ? <Image src={msg.senderPhoto} alt="" fill className="object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-500"><User size={12}/></div>}
                     </div>
                 )}
                 {!isMe && isSequential && <div className="w-10" />}

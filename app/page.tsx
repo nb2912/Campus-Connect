@@ -1,37 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { signInWithPopup, onAuthStateChanged, User, signOut } from "firebase/auth";
+import { useAuth } from "./context/AuthContext";
+import { signInWithPopup, signOut } from "firebase/auth";
 import { auth, googleProvider } from "./firebase"; 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Plane, Dumbbell, Pizza, ShieldCheck, ArrowRight, Zap, Users, Star, ChevronRight } from "lucide-react";
+import Image from "next/image";
+import { useEffect } from "react";
 
 export default function Home() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading } = useAuth();
   const router = useRouter();
 
-  // 1. Check Auth State
+  // Redirect if logged in with correct domain
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser && currentUser.email?.endsWith("@srmist.edu.in")) {
-        router.push("/dashboard");
-      }
-    });
-    return () => unsubscribe();
-  }, [router]);
+    if (user && user.email?.endsWith("@srmist.edu.in")) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
-  // 2. Handle Login
+  // Handle Login
   const handleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const email = result.user.email;
-      if (email && email.endsWith("@srmist.edu.in")) {
-        router.push("/dashboard"); 
-      } else {
+      if (!email || !email.endsWith("@srmist.edu.in")) {
         await signOut(auth);
         alert("Access Denied: You must use your @srmist.edu.in email.");
+      } else {
+        router.push("/dashboard"); 
       }
     } catch (error) {
       console.error("Login failed", error);
