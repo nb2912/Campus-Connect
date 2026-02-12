@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { db } from "../firebase"; 
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { X, Send, User } from "lucide-react";
 import { format } from "date-fns";
@@ -33,18 +33,51 @@ export default function ChatWindow({ request, currentUser, onClose }: ChatProps)
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; 
   }, [messages]);
   
-  // 3. Send Message
+  // 3. Send Message + Notify other participants
   const sendMessage = async (e: React.FormEvent) => { 
     e.preventDefault(); 
-    if (!newMessage.trim()) return; 
+    if (!newMessage.trim()) return;
+    const messageText = newMessage.trim();
+    setNewMessage("");
+
     await addDoc(collection(db, "requests", request.id, "messages"), { 
-      text: newMessage, 
+      text: messageText, 
       senderId: currentUser.uid, 
       senderName: currentUser.displayName,
       senderPhoto: currentUser.photoURL, 
       createdAt: serverTimestamp() 
-    }); 
-    setNewMessage(""); 
+    });
+
+    // Build plan label
+    const planLabel = request.type === "CAB" ? `${request.startLoc} → ${request.endLoc}` 
+                    : request.type === "FOOD" ? `Food: ${request.restaurant}` 
+                    : request.type === "OTHER" ? `${request.customType}` 
+                    : `${request.type}: ${request.description || "Plan"}`;
+
+    // Send notification to all other participants + the creator
+    const recipientIds = new Set<string>();
+    if (request.creatorId && request.creatorId !== currentUser.uid) {
+      recipientIds.add(request.creatorId);
+    }
+    (request.participants || []).forEach((pid: string) => {
+      if (pid !== currentUser.uid) recipientIds.add(pid);
+    });
+
+    // Create notification for each recipient
+    const truncatedMsg = messageText.length > 60 ? messageText.slice(0, 60) + "…" : messageText;
+    const notificationPromises = Array.from(recipientIds).map((rid) =>
+      addDoc(collection(db, "notifications"), {
+        receiverId: rid,
+        message: truncatedMsg,
+        type: "CHAT",
+        read: false,
+        senderName: currentUser.displayName,
+        senderPhoto: currentUser.photoURL || "",
+        planLabel,
+        createdAt: serverTimestamp(),
+      })
+    );
+    await Promise.all(notificationPromises);
   };
   
   // --- FIXED HEADER LOGIC ---

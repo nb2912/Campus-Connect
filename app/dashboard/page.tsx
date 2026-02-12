@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { db, auth } from "../firebase"; 
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, deleteDoc, doc, where, setDoc, increment, limit, getDocs, deleteField, getDoc, arrayUnion, arrayRemove, runTransaction } from "firebase/firestore";
 import { useRouter } from "next/navigation";
@@ -12,6 +12,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import Image from "next/image";
 import { useAuth } from "../context/AuthContext";
+import { useToast } from "../components/ToastNotification";
 
 import Footer from "../components/Footer";
 import { Navbar, BottomNav } from "../components/Navigation";
@@ -33,10 +34,10 @@ type CategoryKey = keyof typeof CATEGORIES;
 
 export default function Dashboard() {
   const { user, userProfile, loading } = useAuth();
+  const { addToast } = useToast();
   const [requests, setRequests] = useState<any[]>([]); 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
-  const [toast, setToast] = useState<{msg: string, type: 'success' | 'error'} | null>(null);
   const [feedLimit, setFeedLimit] = useState(12);
   const [hasMore, setHasMore] = useState(true);
   const [fetching, setFetching] = useState(true);
@@ -58,13 +59,13 @@ export default function Dashboard() {
   const [formHour, setFormHour] = useState("12:00");
   const [formCapacity, setFormCapacity] = useState("2");
   const isInitialLoad = useRef(true);
+  const chatMessageTracker = useRef<Set<string>>(new Set());
   const router = useRouter();
 
   // HELPERS
-  const showToast = (msg: string, type: 'success' | 'error' = 'success') => {
-    setToast({ msg, type });
-    setTimeout(() => setToast(null), 3000);
-  };
+  const showToast = useCallback((msg: string, type: 'success' | 'error' = 'success') => {
+    addToast({ message: msg, type });
+  }, [addToast]);
 
   useEffect(() => {
     if (!loading && !user) router.push("/");
@@ -73,7 +74,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (!user) return;
     
-    // Listen for data
+    // Listen for notifications (join/leave alerts)
     const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where("receiverId", "==", user.uid), orderBy("createdAt", "desc")), (snap) => {
       setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() })));
       
@@ -81,6 +82,22 @@ export default function Dashboard() {
         snap.docChanges().forEach((change) => {
           if (change.type === "added") {
             const data = change.doc.data();
+            
+            // Determine toast type based on notification type
+            const toastType = data.type === "WITHDRAW" ? "leave" 
+                            : data.type === "CHAT" ? "chat" 
+                            : "join";
+            
+            // Show in-app toast notification
+            addToast({
+              message: data.message,
+              type: toastType,
+              senderName: data.senderName || undefined,
+              senderPhoto: data.senderPhoto || undefined,
+              subtitle: data.planLabel || undefined,
+            });
+            
+            // Also send browser notification
             sendBrowserNotification("New Activity update!", data.message);
           }
         });
@@ -124,7 +141,7 @@ export default function Dashboard() {
       unsubRequests();
       unsubLeaderboard();
     };
-  }, [user, feedLimit]);
+  }, [user, feedLimit, addToast]);
 
   const handleLoadMore = () => setFeedLimit(prev => prev + 12);
 
@@ -176,13 +193,22 @@ export default function Dashboard() {
         const status = newParticipants.length >= data.capacity ? "FULL" : "OPEN";
         transaction.update(requestRef, { participants: newParticipants, status });
 
-        // Add notification
+        // Build plan label for notification context
+        const planLabel = data.type === "CAB" ? `${data.startLoc} → ${data.endLoc}` 
+                        : data.type === "FOOD" ? `Food: ${data.restaurant}` 
+                        : data.type === "OTHER" ? `${data.customType}` 
+                        : `${data.type}: ${data.description}`;
+
+        // Add notification with sender info for rich toast
         const notificationRef = doc(collection(db, "notifications"));
         transaction.set(notificationRef, { 
           receiverId: data.creatorId, 
           message: `${user.displayName} joined your ${data.type} group!`, 
           type: "ACCEPT", 
           read: false, 
+          senderName: user.displayName,
+          senderPhoto: user.photoURL || "",
+          planLabel,
           createdAt: serverTimestamp() 
         });
 
@@ -191,8 +217,8 @@ export default function Dashboard() {
         transaction.set(doc(db, "users", user.uid), { points: increment(50) }, { merge: true });
       });
       // Micro-interaction celebration
-      showToast("Joined the squad! 🚀");
-    } catch (error) { showToast(typeof error === 'string' ? error : "Failed to join", "error"); }
+      addToast({ message: "Joined the squad! 🚀", type: "success" });
+    } catch (error) { addToast({ message: typeof error === 'string' ? error : "Failed to join", type: "error" }); }
   };
 
   const handleLeave = async (req: any) => {
@@ -212,13 +238,22 @@ export default function Dashboard() {
         const newParticipants = participants.filter((id: string) => id !== user.uid);
         transaction.update(requestRef, { participants: newParticipants, status: "OPEN" });
 
-        // Add notification
+        // Build plan label for notification context
+        const planLabel = data.type === "CAB" ? `${data.startLoc} → ${data.endLoc}` 
+                        : data.type === "FOOD" ? `Food: ${data.restaurant}` 
+                        : data.type === "OTHER" ? `${data.customType}` 
+                        : `${data.type}: ${data.description}`;
+
+        // Add notification with sender info for rich toast
         const notificationRef = doc(collection(db, "notifications"));
         transaction.set(notificationRef, { 
           receiverId: data.creatorId, 
           message: `${user.displayName} left your group.`, 
           type: "WITHDRAW", 
           read: false, 
+          senderName: user.displayName,
+          senderPhoto: user.photoURL || "",
+          planLabel,
           createdAt: serverTimestamp() 
         });
 
@@ -226,8 +261,8 @@ export default function Dashboard() {
         transaction.set(doc(db, "users", data.creatorId), { points: increment(-50) }, { merge: true });
         transaction.set(doc(db, "users", user.uid), { points: increment(-50) }, { merge: true });
       });
-      showToast("Left group successfully");
-    } catch (error) { showToast(typeof error === 'string' ? error : "Error leaving", "error"); }
+      addToast({ message: "Left group successfully", type: "success" });
+    } catch (error) { addToast({ message: typeof error === 'string' ? error : "Error leaving", type: "error" }); }
   };
 
   const handleDelete = async (id: string) => { if (confirm("Delete?")) { await deleteDoc(doc(db, "requests", id)); showToast("Deleted plan"); }};
@@ -279,17 +314,7 @@ export default function Dashboard() {
       
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onOpenModal={() => setIsModalOpen(true)} unreadCount={notifications.filter(n => !n.read).length} />
       
-      {/* TOAST NOTIFICATION */}
-      <AnimatePresence>
-        {toast && (
-            <motion.div initial={{ opacity: 0, scale: 0.5, y: 20, x: "-50%" }} animate={{ opacity: 1, scale: 1, y: 0, x: "-50%" }} exit={{ opacity: 0, scale: 0.5, x: "-50%" }} className={cn("fixed bottom-24 md:top-24 md:bottom-auto left-1/2 z-[100] px-8 py-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-3 border backdrop-blur-2xl transition-all", toast.type === 'success' ? "bg-indigo-500/20 border-indigo-500/30 text-indigo-100" : "bg-red-500/20 border-red-500/30 text-red-100")}>
-                <div className={cn("w-6 h-6 rounded-full flex items-center justify-center", toast.type === 'success' ? "bg-indigo-500" : "bg-red-500")}>
-                    {toast.type === 'success' ? <Check size={14} className="text-white" /> : <AlertTriangle size={14} className="text-white" />}
-                </div>
-                <span className="text-sm font-bold tracking-tight">{toast.msg}</span>
-            </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Toast notifications are now rendered by the global ToastProvider */}
 
       <main className="pt-28 max-w-7xl mx-auto px-4 md:px-6 min-h-[80vh]">
         

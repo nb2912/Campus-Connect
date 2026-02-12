@@ -9,9 +9,17 @@ service cloud.firestore {
     }
 
     // Profiles: Anyone authenticated can read, only the owner can write
+    // Exception: Any SRM student can update just the 'points' field (for join/leave XP)
     match /users/{userId} {
       allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId && isStudent();
+      allow create: if request.auth != null && request.auth.uid == userId && isStudent();
+      allow update: if request.auth != null && (
+        // Owner can update anything
+        request.auth.uid == userId ||
+        // Any student can update ONLY the points field (used in join/leave transactions)
+        (isStudent() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']))
+      );
+      allow delete: if request.auth != null && request.auth.uid == userId;
     }
 
     // Requests: Must be an SRM student to read or create
