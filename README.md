@@ -2,7 +2,7 @@
 
 **SRM Social** is a high-performance, real-time community platform engineered exclusively for the students of SRM Institute of Science and Technology. It optimizes campus life by facilitating resource sharing, cost reduction, and peer-to-peer networking through a verified, secure ecosystem.
 
-### [🔴 Enter the Dashboard](https://srm-buddy.vercel.app)
+### [🔴 Enter the Dashboard](https://srm-buddy.web.app)
 
 *(Note: Access is restricted to `@srmist.edu.in` domains)*
 
@@ -47,7 +47,7 @@ SRM Social eliminates this friction. By leveraging **real-time data synchronizat
 | **Backend-as-a-Service** | [Firebase](https://firebase.google.com/) |
 | **Database** | [Firestore](https://firebase.google.com/docs/firestore) (Real-time Snapshots) |
 | **Authentication** | Google Identity (Domain Restricted) |
-| **Deployment** | [Vercel](https://vercel.com/) |
+| **Deployment** | Firebase Hosting |
 
 ---
 

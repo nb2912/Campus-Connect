@@ -198,12 +198,36 @@ export default function Dashboard() {
   const handleLeave = async (req: any) => {
     if (!user || !confirm("Leave this group? You will lose points.")) return;
     try {
-        await updateDoc(doc(db, "requests", req.id), { participants: arrayRemove(user.uid), status: "OPEN" });
-        await addDoc(collection(db, "notifications"), { receiverId: req.creatorId, message: `${user.displayName} left your group.`, type: "WITHDRAW", read: false, createdAt: serverTimestamp() });
-        await setDoc(doc(db, "users", req.creatorId), { points: increment(-50) }, { merge: true });
-        await setDoc(doc(db, "users", user.uid), { points: increment(-50) }, { merge: true });
-        showToast("Left group successfully");
-    } catch (error) { showToast("Error leaving", "error"); }
+      await runTransaction(db, async (transaction) => {
+        const requestRef = doc(db, "requests", req.id);
+        const requestSnap = await transaction.get(requestRef);
+        
+        if (!requestSnap.exists()) throw "Plan no longer exists";
+        const data = requestSnap.data();
+        const participants = data.participants || [];
+        
+        if (!participants.includes(user.uid)) throw "You are not in this group";
+
+        // Update request
+        const newParticipants = participants.filter((id: string) => id !== user.uid);
+        transaction.update(requestRef, { participants: newParticipants, status: "OPEN" });
+
+        // Add notification
+        const notificationRef = doc(collection(db, "notifications"));
+        transaction.set(notificationRef, { 
+          receiverId: data.creatorId, 
+          message: `${user.displayName} left your group.`, 
+          type: "WITHDRAW", 
+          read: false, 
+          createdAt: serverTimestamp() 
+        });
+
+        // Deduct points
+        transaction.set(doc(db, "users", data.creatorId), { points: increment(-50) }, { merge: true });
+        transaction.set(doc(db, "users", user.uid), { points: increment(-50) }, { merge: true });
+      });
+      showToast("Left group successfully");
+    } catch (error) { showToast(typeof error === 'string' ? error : "Error leaving", "error"); }
   };
 
   const handleDelete = async (id: string) => { if (confirm("Delete?")) { await deleteDoc(doc(db, "requests", id)); showToast("Deleted plan"); }};
