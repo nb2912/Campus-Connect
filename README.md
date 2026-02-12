@@ -2,7 +2,7 @@
 
 **SRM Social** is a high-performance, real-time community platform engineered exclusively for the students of SRM Institute of Science and Technology. It optimizes campus life by facilitating resource sharing, cost reduction, and peer-to-peer networking through a verified, secure ecosystem.
 
-### [🔴 Enter the Dashboard](https://srm-buddy.web.app)
+### [🔴 Enter the Dashboard](https://srm-buddy.vercel.app)
 
 *(Note: Access is restricted to `@srmist.edu.in` domains)*
 
@@ -47,7 +47,7 @@ SRM Social eliminates this friction. By leveraging **real-time data synchronizat
 | **Backend-as-a-Service** | [Firebase](https://firebase.google.com/) |
 | **Database** | [Firestore](https://firebase.google.com/docs/firestore) (Real-time Snapshots) |
 | **Authentication** | Google Identity (Domain Restricted) |
-| **Deployment** | Firebase Hosting |
+| **Deployment** | [Vercel](https://vercel.com/) |
 
 ---
 
@@ -67,16 +67,12 @@ To run a local instance of SRM Social:
 ```bash
 git clone https://github.com/your-username/srm-social.git
 cd srm-social
-
 ```
-
 
 2. **Install Dependencies**
 ```bash
 npm install
-
 ```
-
 
 3. **Environment Configuration**
 Create a `.env.local` file and add your Firebase credentials:
@@ -84,17 +80,12 @@ Create a `.env.local` file and add your Firebase credentials:
 NEXT_PUBLIC_FIREBASE_API_KEY=your_key
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your_domain
 # ... etc
-
 ```
-
 
 4. **Run Development Server**
 ```bash
 npm run dev
-
 ```
-
-
 
 ---
 
@@ -111,4 +102,3 @@ We welcome contributions! If you'd like to improve SRM Social:
 ---
 
 **Developed with ❤️ for the SRM Community.**
-

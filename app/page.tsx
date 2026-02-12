@@ -106,7 +106,7 @@ export default function Home() {
                     {[1,2,3].map(i => <div key={i} className={`w-8 h-8 rounded-full border-2 border-[#0f172a] bg-slate-700 flex items-center justify-center text-[10px] z-${10-i}`}>🎓</div>)}
                 </div>
                 <div className="text-xs text-slate-400">
-                  <strong className="block text-white text-sm">500+ Students</strong>
+                  <strong className="block text-white text-sm">250+ Students</strong>
                   Joined this week
                 </div>
               </div>
