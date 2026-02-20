@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { db, auth } from "../firebase"; 
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, deleteDoc, doc, where, setDoc, increment, limit, getDocs, deleteField, getDoc, arrayUnion, arrayRemove, runTransaction } from "firebase/firestore";
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, updateDoc, deleteDoc, doc, where, setDoc, increment, limit, getDocs, deleteField, getDoc, arrayUnion, arrayRemove, runTransaction, Timestamp } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { format, addDays } from "date-fns";
@@ -20,8 +20,51 @@ import ChatWindow from "../components/ChatWindow";
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
+// --- TYPES ---
+type CategoryKey = "CAB" | "GYM" | "TRAIN" | "FOOD" | "STUDY" | "MOVIE" | "OTHER";
+
+interface PlanRequest {
+  id: string;
+  type: CategoryKey;
+  description: string;
+  startLoc?: string;
+  endLoc?: string;
+  restaurant?: string;
+  customType?: string;
+  time: string;
+  expiresAt?: { toDate: () => Date };
+  capacity: number;
+  participants: string[];
+  status: "OPEN" | "FULL";
+  createdAt: { toDate: () => Date } | null;
+  creatorId: string;
+  creatorName: string;
+  creatorEmail: string;
+  creatorPhoto: string;
+  creatorUpi?: string;
+}
+
+interface AppNotification {
+  id: string;
+  receiverId: string;
+  message: string;
+  type: "ACCEPT" | "WITHDRAW" | string;
+  read: boolean;
+  senderName?: string;
+  senderPhoto?: string;
+  planLabel?: string;
+  createdAt: { toDate: () => Date } | null;
+}
+
+interface LeaderboardEntry {
+  id: string;
+  displayName: string;
+  photoURL?: string;
+  points: number;
+}
+
 // --- CONFIG ---
-const CATEGORIES = {
+const CATEGORIES: Record<CategoryKey, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
   CAB: { label: "Cab", icon: Plane, color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20" },
   GYM: { label: "Gym", icon: Dumbbell, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
   TRAIN: { label: "Train", icon: Train, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
@@ -30,14 +73,13 @@ const CATEGORIES = {
   MOVIE: { label: "Movie", icon: Ticket, color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20" },
   OTHER: { label: "Other", icon: Plus, color: "text-slate-400", bg: "bg-white/5", border: "border-white/10" },
 };
-type CategoryKey = keyof typeof CATEGORIES;
 
 export default function Dashboard() {
   const { user, userProfile, loading } = useAuth();
   const { addToast } = useToast();
-  const [requests, setRequests] = useState<any[]>([]); 
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [requests, setRequests] = useState<PlanRequest[]>([]); 
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [feedLimit, setFeedLimit] = useState(12);
   const [hasMore, setHasMore] = useState(true);
   const [fetching, setFetching] = useState(true);
@@ -46,7 +88,7 @@ export default function Dashboard() {
   const [filter, setFilter] = useState<CategoryKey | "ALL">("ALL");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isProfileEditOpen, setIsProfileEditOpen] = useState(false);
-  const [activeChat, setActiveChat] = useState<any>(null);
+  const [activeChat, setActiveChat] = useState<PlanRequest | null>(null);
   
   // FORM
   const [formType, setFormType] = useState<CategoryKey>("CAB");
@@ -58,8 +100,9 @@ export default function Dashboard() {
   const [formDay, setFormDay] = useState<"TODAY" | "TOMORROW">("TODAY");
   const [formHour, setFormHour] = useState("12:00");
   const [formCapacity, setFormCapacity] = useState("2");
-  const isInitialLoad = useRef(true);
-  const chatMessageTracker = useRef<Set<string>>(new Set());
+  const [confirmDialog, setConfirmDialog] = useState<{ message: string; onConfirm: () => void } | null>(null);
+  const isReqInitialLoad = useRef(true);
+  const isNotifInitialLoad = useRef(true);
   const router = useRouter();
 
   // HELPERS
@@ -75,10 +118,12 @@ export default function Dashboard() {
     if (!user) return;
     
     // Listen for notifications (join/leave alerts)
-    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where("receiverId", "==", user.uid), orderBy("createdAt", "desc")), (snap) => {
-      setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+    // ADDED LIMIT(50) to prevent unbounded reads
+    const unsubNotifications = onSnapshot(query(collection(db, "notifications"), where("receiverId", "==", user.uid), orderBy("createdAt", "desc"), limit(50)), (snap) => {
+      setNotifications(snap.docs.map(d => ({ id: d.id, ...d.data() } as AppNotification)));
       
-      if (!isInitialLoad.current) {
+      // FIX: Use dedicated ref for notifications to prevent race condition with requests
+      if (!isNotifInitialLoad.current) {
         snap.docChanges().forEach((change) => {
           if (change.type === "added") {
             const data = change.doc.data();
@@ -102,15 +147,16 @@ export default function Dashboard() {
           }
         });
       }
+      isNotifInitialLoad.current = false;
     });
     
     const q = query(collection(db, "requests"), orderBy("createdAt", "desc"), limit(feedLimit));
     const unsubRequests = onSnapshot(q, (snap) => {
-      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      setRequests(snap.docs.map(d => ({ id: d.id, ...d.data() } as PlanRequest)));
       setHasMore(snap.docs.length === feedLimit);
       setFetching(false);
 
-      if (!isInitialLoad.current) {
+      if (!isReqInitialLoad.current) {
         snap.docChanges().forEach((change) => {
           if (change.type === "added") {
             const data = change.doc.data();
@@ -120,21 +166,14 @@ export default function Dashboard() {
           }
         });
       }
-      isInitialLoad.current = false;
+      isReqInitialLoad.current = false;
     });
 
-    const unsubLeaderboard = onSnapshot(query(collection(db, "users"), orderBy("points", "desc"), limit(10)), (snap) => setLeaderboard(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
+    const unsubLeaderboard = onSnapshot(query(collection(db, "users"), orderBy("points", "desc"), limit(10)), (snap) => setLeaderboard(snap.docs.map(d => ({ id: d.id, ...d.data() } as LeaderboardEntry))));
 
-    const cleanup = async () => {
-      const now = new Date();
-      const snapshot = await getDocs(query(collection(db, "requests"), where("creatorId", "==", user.uid)));
-      snapshot.forEach(async (d) => {
-        const data = d.data();
-        if (!data.time) return;
-        if (now > new Date(new Date(data.time).getTime() + (3 * 3600000))) await deleteDoc(doc(db, "requests", d.id));
-      });
-    };
-    cleanup();
+    // REMOVED: potentially dangerous client-side cleanup. 
+    // This logic should be moved to a scheduled backend function to prevent "ghost" requests.
+    // const cleanup = async () => { ... } 
 
     return () => {
       unsubNotifications();
@@ -147,11 +186,24 @@ export default function Dashboard() {
 
   const handleCreateRequest = async (e: React.FormEvent) => {
     e.preventDefault(); if (!user) return;
+
+    // --- RATE LIMIT: max 3 active plans per user ---
+    const activePlansSnap = await getDocs(
+      query(collection(db, "requests"), where("creatorId", "==", user.uid), where("status", "in", ["OPEN", "FULL"]))
+    );
+    if (activePlansSnap.size >= 3) {
+      addToast({ message: "You can only have 3 active plans at a time. Delete one first.", type: "error" });
+      return;
+    }
+
     const date = formDay === "TODAY" ? new Date() : addDays(new Date(), 1);
     const [h, m] = formHour.split(":");
     date.setHours(parseInt(h));
     date.setMinutes(parseInt(m));
     const combinedTime = date.toISOString();
+
+    // Compute expiresAt = plan time + 3 hours (used for Firestore TTL auto-cleanup)
+    const expiresAt = Timestamp.fromDate(new Date(date.getTime() + 3 * 60 * 60 * 1000));
 
     await addDoc(collection(db, "requests"), { 
       type: formType, 
@@ -161,6 +213,7 @@ export default function Dashboard() {
       restaurant: formRestaurant,
       customType: formCustomType,
       time: combinedTime, 
+      expiresAt,
       capacity: Number(formCapacity), 
       participants: [], createdAt: serverTimestamp(), status: "OPEN", 
       creatorName: user.displayName, creatorEmail: user.email, creatorId: user.uid, creatorPhoto: user.photoURL,
@@ -172,7 +225,7 @@ export default function Dashboard() {
     showToast("Plan created successfully!");
   };
 
-  const handleJoin = async (req: any) => {
+  const handleJoin = async (req: PlanRequest) => {
     if (!user || req.creatorId === user.uid) return;
     if (req.participants?.includes(user.uid)) return;
     
@@ -221,51 +274,66 @@ export default function Dashboard() {
     } catch (error) { addToast({ message: typeof error === 'string' ? error : "Failed to join", type: "error" }); }
   };
 
-  const handleLeave = async (req: any) => {
-    if (!user || !confirm("Leave this group? You will lose points.")) return;
-    try {
-      await runTransaction(db, async (transaction) => {
-        const requestRef = doc(db, "requests", req.id);
-        const requestSnap = await transaction.get(requestRef);
-        
-        if (!requestSnap.exists()) throw "Plan no longer exists";
-        const data = requestSnap.data();
-        const participants = data.participants || [];
-        
-        if (!participants.includes(user.uid)) throw "You are not in this group";
+  const handleLeave = async (req: PlanRequest) => {
+    if (!user) return;
+    setConfirmDialog({
+      message: "Leave this group? You will lose 50 XP.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          await runTransaction(db, async (transaction) => {
+            const requestRef = doc(db, "requests", req.id);
+            const requestSnap = await transaction.get(requestRef);
+            
+            if (!requestSnap.exists()) throw "Plan no longer exists";
+            const data = requestSnap.data();
+            const participants = data.participants || [];
+            
+            if (!participants.includes(user.uid)) throw "You are not in this group";
 
-        // Update request
-        const newParticipants = participants.filter((id: string) => id !== user.uid);
-        transaction.update(requestRef, { participants: newParticipants, status: "OPEN" });
+            // Update request
+            const newParticipants = participants.filter((id: string) => id !== user.uid);
+            transaction.update(requestRef, { participants: newParticipants, status: "OPEN" });
 
-        // Build plan label for notification context
-        const planLabel = data.type === "CAB" ? `${data.startLoc} → ${data.endLoc}` 
-                        : data.type === "FOOD" ? `Food: ${data.restaurant}` 
-                        : data.type === "OTHER" ? `${data.customType}` 
-                        : `${data.type}: ${data.description}`;
+            // Build plan label for notification context
+            const planLabel = data.type === "CAB" ? `${data.startLoc} → ${data.endLoc}` 
+                            : data.type === "FOOD" ? `Food: ${data.restaurant}` 
+                            : data.type === "OTHER" ? `${data.customType}` 
+                            : `${data.type}: ${data.description}`;
 
-        // Add notification with sender info for rich toast
-        const notificationRef = doc(collection(db, "notifications"));
-        transaction.set(notificationRef, { 
-          receiverId: data.creatorId, 
-          message: `${user.displayName} left your group.`, 
-          type: "WITHDRAW", 
-          read: false, 
-          senderName: user.displayName,
-          senderPhoto: user.photoURL || "",
-          planLabel,
-          createdAt: serverTimestamp() 
-        });
+            // Add notification with sender info for rich toast
+            const notificationRef = doc(collection(db, "notifications"));
+            transaction.set(notificationRef, { 
+              receiverId: data.creatorId, 
+              message: `${user.displayName} left your group.`, 
+              type: "WITHDRAW", 
+              read: false, 
+              senderName: user.displayName,
+              senderPhoto: user.photoURL || "",
+              planLabel,
+              createdAt: serverTimestamp() 
+            });
 
-        // Deduct points
-        transaction.set(doc(db, "users", data.creatorId), { points: increment(-50) }, { merge: true });
-        transaction.set(doc(db, "users", user.uid), { points: increment(-50) }, { merge: true });
-      });
-      addToast({ message: "Left group successfully", type: "success" });
-    } catch (error) { addToast({ message: typeof error === 'string' ? error : "Error leaving", type: "error" }); }
+            // Deduct points
+            transaction.set(doc(db, "users", data.creatorId), { points: increment(-50) }, { merge: true });
+            transaction.set(doc(db, "users", user.uid), { points: increment(-50) }, { merge: true });
+          });
+          addToast({ message: "Left group successfully", type: "success" });
+        } catch (error) { addToast({ message: typeof error === 'string' ? error : "Error leaving", type: "error" }); }
+      },
+    });
   };
 
-  const handleDelete = async (id: string) => { if (confirm("Delete?")) { await deleteDoc(doc(db, "requests", id)); showToast("Deleted plan"); }};
+  const handleDelete = async (id: string) => {
+    setConfirmDialog({
+      message: "Delete this plan? This cannot be undone.",
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        await deleteDoc(doc(db, "requests", id));
+        showToast("Deleted plan");
+      },
+    });
+  };
   const handleUpdateProfile = async (e: React.FormEvent) => { 
     e.preventDefault(); 
     if (!user) return;
@@ -382,7 +450,7 @@ export default function Dashboard() {
                   const capacity = req.capacity || 1;
                   const isFull = joinedCount >= capacity;
                   const isMine = req.creatorId === user?.uid;
-                  const iJoined = participants.includes(user?.uid);
+                  const iJoined = participants.includes(user!.uid);
                   
                   // Seats Visualizer
                   const seats = Array.from({ length: capacity }).map((_, i) => i < joinedCount ? "filled" : "empty");
@@ -405,7 +473,7 @@ export default function Dashboard() {
                                   </div>
                               </div>
                           </div>
-                          <span className="text-xs font-bold text-slate-400 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">{req.createdAt?.seconds ? format(new Date(req.createdAt.seconds * 1000), 'h:mm a') : 'Now'}</span>
+                          <span className="text-xs font-bold text-slate-400 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">{req.createdAt ? format(req.createdAt.toDate(), 'h:mm a') : 'Now'}</span>
                       </div>
 
                        {/* Content */}
@@ -446,7 +514,7 @@ export default function Dashboard() {
                               )}
 
                               {iJoined && !isMine && req.creatorUpi && (
-                                  <button onClick={() => handlePayment(req.creatorUpi, req.description)} className="flex items-center gap-2 px-4 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all font-bold text-xs uppercase tracking-wider">
+                                  <button onClick={() => handlePayment(req.creatorUpi ?? '', req.description)} className="flex items-center gap-2 px-4 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all font-bold text-xs uppercase tracking-wider">
                                       Pay UPI
                                   </button>
                               )}
@@ -493,7 +561,7 @@ export default function Dashboard() {
         {activeTab === "ALERTS" && (
             <div className="max-w-xl mx-auto">
                 <h2 className="text-2xl font-bold mb-6 text-white">Notifications</h2>
-                <div className="space-y-2">{notifications.length === 0 ? <div className="text-center text-slate-500 py-10">No new alerts</div> : notifications.map(n => (<div key={n.id} onClick={() => updateDoc(doc(db, "notifications", n.id), { read: true })} className={cn("p-4 rounded-2xl border cursor-pointer flex gap-3 items-start backdrop-blur-md transition-colors", n.read ? "bg-white/5 border-white/5 opacity-50" : "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20")}><div className="mt-1">{n.type === "WITHDRAW" ? <AlertTriangle size={16} className="text-red-400" /> : <Check size={16} className="text-emerald-400" />}</div><div><p className="text-sm text-slate-200 font-medium">{n.message}</p><span className="text-xs text-slate-500 mt-1 block">{n.createdAt?.seconds ? format(new Date(n.createdAt.seconds * 1000), 'MMM d, h:mm a') : 'Just now'}</span></div></div>))}</div>
+                <div className="space-y-2">{notifications.length === 0 ? <div className="text-center text-slate-500 py-10">No new alerts</div> : notifications.map(n => (<div key={n.id} onClick={() => updateDoc(doc(db, "notifications", n.id), { read: true })} className={cn("p-4 rounded-2xl border cursor-pointer flex gap-3 items-start backdrop-blur-md transition-colors", n.read ? "bg-white/5 border-white/5 opacity-50" : "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20")}><div className="mt-1">{n.type === "WITHDRAW" ? <AlertTriangle size={16} className="text-red-400" /> : <Check size={16} className="text-emerald-400" />}</div><div><p className="text-sm text-slate-200 font-medium">{n.message}</p><span className="text-xs text-slate-500 mt-1 block">{n.createdAt ? format(n.createdAt.toDate(), 'MMM d, h:mm a') : 'Just now'}</span></div></div>))}</div>
             </div>
         )}
 
@@ -607,6 +675,46 @@ export default function Dashboard() {
       </AnimatePresence>
 
       {activeChat && user && <ChatWindow request={activeChat} currentUser={user} onClose={() => setActiveChat(null)} />}
+
+      {/* CONFIRM DIALOG */}
+      <AnimatePresence>
+        {confirmDialog && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              onClick={() => setConfirmDialog(null)}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: "spring", stiffness: 350, damping: 30 }}
+              className="relative z-10 w-full max-w-sm bg-[#1e293b] border border-white/10 rounded-3xl p-7 shadow-2xl text-center"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-5">
+                <AlertTriangle size={26} className="text-red-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Are you sure?</h3>
+              <p className="text-sm text-slate-400 mb-7">{confirmDialog.message}</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConfirmDialog(null)}
+                  className="flex-1 py-3 rounded-2xl bg-white/5 text-slate-300 font-bold hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDialog.onConfirm}
+                  className="flex-1 py-3 rounded-2xl bg-red-500/20 text-red-300 font-bold border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                >
+                  Confirm
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

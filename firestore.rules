@@ -8,16 +8,18 @@ service cloud.firestore {
       return request.auth != null && request.auth.token.email.split('@')[1] == 'srmist.edu.in';
     }
 
-    // Profiles: Anyone authenticated can read, only the owner can write
-    // Exception: Any SRM student can update just the 'points' field (for join/leave XP)
+    // Profiles: Any SRM student can read (data shown publicly in feed/leaderboard); only owner can write
     match /users/{userId} {
-      allow read: if request.auth != null;
+      allow read: if isStudent();
       allow create: if request.auth != null && request.auth.uid == userId && isStudent();
       allow update: if request.auth != null && (
         // Owner can update anything
         request.auth.uid == userId ||
-        // Any student can update ONLY the points field (used in join/leave transactions)
-        (isStudent() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']))
+        // Any student can update ONLY the points field by exactly +/- 50
+        (isStudent() && 
+         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points']) &&
+         (request.resource.data.points == resource.data.points + 50 || request.resource.data.points == resource.data.points - 50)
+        )
       );
       allow delete: if request.auth != null && request.auth.uid == userId;
     }
@@ -28,7 +30,7 @@ service cloud.firestore {
       allow create: if isStudent();
       allow update: if isStudent() && (
         resource.data.creatorId == request.auth.uid || 
-        request.resource.data.participants.size() > resource.data.participants.size() ||
+        (request.resource.data.participants.size() > resource.data.participants.size() && request.resource.data.participants.size() <= resource.data.capacity) ||
         (request.resource.data.participants.size() < resource.data.participants.size() && resource.data.participants.hasAny([request.auth.uid]))
       );
       allow delete: if isStudent() && resource.data.creatorId == request.auth.uid;

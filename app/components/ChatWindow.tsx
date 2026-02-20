@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { db } from "../firebase"; 
-import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc } from "firebase/firestore";
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp, doc, getDoc, writeBatch } from "firebase/firestore";
 import { motion } from "framer-motion";
 import { X, Send, User } from "lucide-react";
 import { format } from "date-fns";
@@ -10,21 +10,47 @@ import Image from "next/image";
 
 function cn(...inputs: ClassValue[]) { return twMerge(clsx(inputs)); }
 
+// Define types locally for now (should ideally move to types/index.ts)
+interface Message {
+  id: string;
+  text: string;
+  senderId: string;
+  senderName: string;
+  senderPhoto: string;
+  createdAt: any; // Firestore timestamp
+}
+
+interface ChatRequest {
+  id: string;
+  type: string;
+  startLoc?: string; // Optional for non-CAB
+  endLoc?: string;   // Optional for non-CAB
+  restaurant?: string; // Optional for FOOD
+  customType?: string; // Optional for OTHER
+  description?: string;
+  creatorId: string;
+  creatorName?: string; // For 1-on-1 title logic
+  acceptedByName?: string; // For 1-on-1 title logic
+  capacity?: number;
+  participants: string[];
+}
+
 interface ChatProps {
-  request: any; // Changed to 'any' to handle dynamic fields safely
-  currentUser: any;
+  request: ChatRequest;
+  currentUser: any; // Ideally user type from context
   onClose: () => void;
 }
 
 export default function ChatWindow({ request, currentUser, onClose }: ChatProps) {
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [isSending, setIsSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   
   // 1. Fetch Messages
   useEffect(() => { 
     const q = query(collection(db, "requests", request.id, "messages"), orderBy("createdAt", "asc")); 
-    const unsub = onSnapshot(q, (s) => setMessages(s.docs.map(d => ({ id: d.id, ...d.data() })))); 
+    const unsub = onSnapshot(q, (s) => setMessages(s.docs.map(d => ({ id: d.id, ...d.data() } as Message)))); 
     return () => unsub(); 
   }, [request.id]);
   
@@ -33,51 +59,70 @@ export default function ChatWindow({ request, currentUser, onClose }: ChatProps)
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight; 
   }, [messages]);
   
-  // 3. Send Message + Notify other participants
+  // 3. Send Message + Notify other participants (Atomic Batch)
   const sendMessage = async (e: React.FormEvent) => { 
     e.preventDefault(); 
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || isSending) return;
+    
     const messageText = newMessage.trim();
+    // Optimistic UI: Don't clear until success, or clear and restore on error
+    // Strategy: Clear input immediately to feel fast, restore if error
     setNewMessage("");
+    setIsSending(true);
 
-    await addDoc(collection(db, "requests", request.id, "messages"), { 
-      text: messageText, 
-      senderId: currentUser.uid, 
-      senderName: currentUser.displayName,
-      senderPhoto: currentUser.photoURL, 
-      createdAt: serverTimestamp() 
-    });
-
-    // Build plan label
-    const planLabel = request.type === "CAB" ? `${request.startLoc} → ${request.endLoc}` 
-                    : request.type === "FOOD" ? `Food: ${request.restaurant}` 
-                    : request.type === "OTHER" ? `${request.customType}` 
-                    : `${request.type}: ${request.description || "Plan"}`;
-
-    // Send notification to all other participants + the creator
-    const recipientIds = new Set<string>();
-    if (request.creatorId && request.creatorId !== currentUser.uid) {
-      recipientIds.add(request.creatorId);
-    }
-    (request.participants || []).forEach((pid: string) => {
-      if (pid !== currentUser.uid) recipientIds.add(pid);
-    });
-
-    // Create notification for each recipient
-    const truncatedMsg = messageText.length > 60 ? messageText.slice(0, 60) + "…" : messageText;
-    const notificationPromises = Array.from(recipientIds).map((rid) =>
-      addDoc(collection(db, "notifications"), {
-        receiverId: rid,
-        message: truncatedMsg,
-        type: "CHAT",
-        read: false,
+    try {
+      const batch = writeBatch(db);
+      
+      // 3.1 Add Message to Subcollection
+      const messageRef = doc(collection(db, "requests", request.id, "messages"));
+      batch.set(messageRef, { 
+        text: messageText, 
+        senderId: currentUser.uid, 
         senderName: currentUser.displayName,
-        senderPhoto: currentUser.photoURL || "",
-        planLabel,
-        createdAt: serverTimestamp(),
-      })
-    );
-    await Promise.all(notificationPromises);
+        senderPhoto: currentUser.photoURL, 
+        createdAt: serverTimestamp() 
+      });
+
+      // 3.2 Build Notification Context
+      const planLabel = request.type === "CAB" ? `${request.startLoc} → ${request.endLoc}` 
+                      : request.type === "FOOD" ? `Food: ${request.restaurant}` 
+                      : request.type === "OTHER" ? `${request.customType}` 
+                      : `${request.type}: ${request.description || "Plan"}`;
+
+      // 3.3 Add Notifications (Fan-out)
+      const recipientIds = new Set<string>();
+      if (request.creatorId && request.creatorId !== currentUser.uid) {
+        recipientIds.add(request.creatorId);
+      }
+      (request.participants || []).forEach((pid: string) => {
+        if (pid !== currentUser.uid) recipientIds.add(pid);
+      });
+
+      const truncatedMsg = messageText.length > 60 ? messageText.slice(0, 60) + "…" : messageText;
+      
+      recipientIds.forEach((rid) => {
+        const notifRef = doc(collection(db, "notifications"));
+        batch.set(notifRef, {
+          receiverId: rid,
+          message: truncatedMsg,
+          type: "CHAT",
+          read: false,
+          senderName: currentUser.displayName,
+          senderPhoto: currentUser.photoURL || "",
+          planLabel,
+          createdAt: serverTimestamp(),
+        });
+      });
+
+      await batch.commit();
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      // Restore message on error
+      setNewMessage(messageText);
+      alert("Failed to send message. Please try again.");
+    } finally {
+      setIsSending(false);
+    }
   };
   
   // --- FIXED HEADER LOGIC ---
