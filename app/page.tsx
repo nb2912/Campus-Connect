@@ -5,8 +5,9 @@ import { signInWithPopup, signOut } from "firebase/auth";
 import { auth, googleProvider } from "./firebase"; 
 import { useRouter } from "next/navigation";
 import { motion, useInView } from "framer-motion";
-import { Plane, Dumbbell, Pizza, ShieldCheck, ArrowRight, Zap, Users, Star, ChevronRight, BookOpen, Film, Train, Sparkles, LogIn } from "lucide-react";
+import { Plane, Dumbbell, Pizza, ShieldCheck, ArrowRight, Zap, Users, Star, ChevronRight, BookOpen, Film, Train, Sparkles, LogIn, Mail } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 
 export default function Home() {
@@ -67,9 +68,14 @@ export default function Home() {
           </div>
           
           {!user && (
-            <button onClick={handleLogin} className="hidden md:flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 hover:border-indigo-500/40 transition-all text-sm font-semibold text-slate-300 hover:text-white group">
-              <LogIn size={15} className="group-hover:text-indigo-400 transition-colors" /> Student Login <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
-            </button>
+            <div className="hidden md:flex items-center gap-3">
+              <Link href="/auth" className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 hover:border-indigo-500/40 transition-all text-sm font-semibold text-slate-300 hover:text-white group">
+                <Mail size={15} className="group-hover:text-indigo-400 transition-colors" /> Email Login
+              </Link>
+              <button onClick={handleLogin} className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 hover:border-indigo-500/50 transition-all text-sm font-semibold text-indigo-300 hover:text-white group">
+                <LogIn size={15} className="group-hover:text-indigo-300 transition-colors" /> Google <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+              </button>
+            </div>
           )}
         </nav>
 
@@ -113,20 +119,26 @@ export default function Home() {
               </motion.div>
             )}
 
-            <div className="flex flex-col sm:flex-row gap-5 pt-4">
+            <div className="flex flex-col sm:flex-row gap-4 pt-4">
+              <Link 
+                href="/auth"
+                className="group relative px-8 py-4 bg-white text-black font-bold text-lg rounded-2xl shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-15px_rgba(255,255,255,0.5)] hover:scale-[1.02] transition-all duration-300 overflow-hidden text-center"
+              >
+                <span className="relative z-10 flex items-center justify-center gap-2">
+                  {user ? "Open Dashboard" : "Join Network"} <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/>
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Link>
               <button 
                 onClick={handleLogin}
                 disabled={loginLoading}
-                className="group relative px-8 py-4 bg-white text-black font-bold text-lg rounded-2xl shadow-[0_0_40px_-10px_rgba(255,255,255,0.3)] hover:shadow-[0_0_60px_-15px_rgba(255,255,255,0.5)] hover:scale-[1.02] transition-all duration-300 overflow-hidden disabled:opacity-70 disabled:cursor-not-allowed disabled:scale-100"
+                className="group flex items-center justify-center gap-2 px-7 py-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/20 transition-all text-base font-bold text-slate-300 hover:text-white disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                <span className="relative z-10 flex items-center gap-2">
-                  {loginLoading ? (
-                    <><span className="w-5 h-5 border-2 border-black/30 border-t-black rounded-full animate-spin" /> Connecting...</>
-                  ) : (
-                    <>{user ? "Open Dashboard" : "Join Network"} <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform"/></>
-                  )}
-                </span>
-                <div className="absolute inset-0 bg-gradient-to-r from-indigo-50 to-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                {loginLoading ? (
+                  <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Connecting...</>
+                ) : (
+                  <><LogIn size={18} /> Google Sign In</>
+                )}
               </button>
             </div>
           </motion.div>
