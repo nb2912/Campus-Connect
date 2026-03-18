@@ -5,7 +5,7 @@ service cloud.firestore {
     
     // Helper: Is the user a student at SRM?
     function isStudent() {
-      return request.auth != null && request.auth.token.email.split('@')[1] == 'srmist.edu.in';
+      return request.auth != null && request.auth.token.email.matches('^[a-zA-Z]{2}[0-9]{4}@srmist\\.edu\\.in$');
     }
 
     // Profiles: Any SRM student can read (data shown publicly in feed/leaderboard); only owner can write

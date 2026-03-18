@@ -1,8 +1,7 @@
 "use client";
 
 import { useAuth } from "./context/AuthContext";
-import { signInWithPopup, signOut } from "firebase/auth";
-import { auth, googleProvider } from "./firebase"; 
+
 import { useRouter } from "next/navigation";
 import { motion, useInView } from "framer-motion";
 import { Plane, Dumbbell, Pizza, ShieldCheck, ArrowRight, Zap, Users, Star, ChevronRight, BookOpen, Film, Train, Sparkles, LogIn, Mail } from "lucide-react";
@@ -23,27 +22,8 @@ export default function Home() {
     }
   }, [user, router]);
 
-  // Handle Login
-  const handleLogin = async () => {
-    setLoginError(null);
-    setLoginLoading(true);
-    try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const email = result.user.email;
-      if (!email || !email.endsWith("@srmist.edu.in")) {
-        await signOut(auth);
-        setLoginError("Access denied. Please use your @srmist.edu.in Google account.");
-      } else {
-        router.push("/dashboard"); 
-      }
-    } catch (error: any) {
-      if (error?.code !== "auth/popup-closed-by-user") {
-        setLoginError("Login failed. Please try again.");
-      }
-      console.error("Login failed", error);
-    } finally {
-      setLoginLoading(false);
-    }
+  const handleLogin = () => {
+    router.push("/auth");
   };
 
   return (
@@ -69,11 +49,8 @@ export default function Home() {
           
           {!user && (
             <div className="hidden md:flex items-center gap-3">
-              <Link href="/auth" className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 hover:border-indigo-500/40 transition-all text-sm font-semibold text-slate-300 hover:text-white group">
-                <Mail size={15} className="group-hover:text-indigo-400 transition-colors" /> Email Login
-              </Link>
               <button onClick={handleLogin} className="flex items-center gap-2 px-5 py-2.5 rounded-full border border-indigo-500/30 bg-indigo-500/10 hover:bg-indigo-500/20 hover:border-indigo-500/50 transition-all text-sm font-semibold text-indigo-300 hover:text-white group">
-                <LogIn size={15} className="group-hover:text-indigo-300 transition-colors" /> Google <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                <LogIn size={15} className="group-hover:text-indigo-300 transition-colors" /> Login <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
               </button>
             </div>
           )}
@@ -131,14 +108,9 @@ export default function Home() {
               </Link>
               <button 
                 onClick={handleLogin}
-                disabled={loginLoading}
-                className="group flex items-center justify-center gap-2 px-7 py-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/20 transition-all text-base font-bold text-slate-300 hover:text-white disabled:opacity-70 disabled:cursor-not-allowed"
+                className="group flex items-center justify-center gap-2 px-7 py-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.07] hover:border-white/20 transition-all text-base font-bold text-slate-300 hover:text-white"
               >
-                {loginLoading ? (
-                  <><span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Connecting...</>
-                ) : (
-                  <><LogIn size={18} /> Google Sign In</>
-                )}
+                  <><LogIn size={18} /> Login</>
               </button>
             </div>
           </motion.div>
@@ -298,7 +270,7 @@ function CategoryShowcase({ onLogin }: { onLogin: () => void }) {
 
 // --- HOW IT WORKS ---
 const STEPS = [
-  { num: "01", title: "Login with SRM ID", desc: "Sign in securely with your @srmist.edu.in Google account. No outsiders allowed.", icon: ShieldCheck },
+  { num: "01", title: "Login with SRM ID", desc: "Sign in securely with your ab1234@srmist.edu.in account. No outsiders allowed.", icon: ShieldCheck },
   { num: "02", title: "Post or Browse Plans", desc: "Create a plan in seconds or browse what your fellow students are already organizing.", icon: Zap },
   { num: "03", title: "Join & Chat", desc: "Jump into a plan and chat directly with participants to coordinate the details.", icon: Users },
   { num: "04", title: "Earn Points", desc: "Complete plans to earn points, climb the leaderboard, and flex on your campus network.", icon: Star },

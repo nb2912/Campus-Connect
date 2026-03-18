@@ -22,7 +22,7 @@ const sections: Section[] = [
     title: "1. Eligibility & Access",
     content: (
       <>
-        <p>SRM Social is exclusively available to currently enrolled students of <strong className="text-white">SRM Institute of Science and Technology (SRMIST)</strong>. Access requires authentication via a valid <code className="text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded text-xs">@srmist.edu.in</code> Google account.</p>
+        <p>SRM Social is exclusively available to currently enrolled students of <strong className="text-white">SRM Institute of Science and Technology (SRMIST)</strong>. Access requires an account created with a valid <code className="text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded text-xs">ab1234@srmist.edu.in</code> email.</p>
         <p>By signing in, you confirm that:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>You are a current SRMIST student with a valid institutional email.</li>
@@ -59,7 +59,7 @@ const sections: Section[] = [
       <>
         <p>When you use SRM Social, the following information is stored:</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong className="text-white">Profile data:</strong> your Google display name, profile photo, and institutional email address.</li>
+          <li><strong className="text-white">Profile data:</strong> your registered display name and institutional email address.</li>
           <li><strong className="text-white">Activity data:</strong> plans you create, join, or leave, and your XP points balance.</li>
           <li><strong className="text-white">Optional profile data:</strong> phone number, hostel/address, and UPI ID — provided voluntarily.</li>
           <li><strong className="text-white">Notifications:</strong> messages sent to other users when you interact with their plans.</li>
