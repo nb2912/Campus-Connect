@@ -70,9 +70,12 @@ export default function AuthPage() {
         return "Invalid email or password. Please try again.";
       case "auth/too-many-requests":
         return "Too many failed attempts. Please try again later.";
+      case "auth/operation-not-allowed":
+        return "Email/Password sign-in is not enabled in Firebase. Please enable it in the Firebase Console.";
       case "auth/popup-closed-by-user":
         return "";
       default:
+        console.error("Unhandled Firebase auth error code:", code);
         return "Something went wrong. Please try again.";
     }
   };
@@ -358,7 +361,7 @@ export default function AuthPage() {
                     type="email"
                     placeholder="yourname@srmist.edu.in"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value.trim())}
                     required
                     className={`w-full bg-black/20 border rounded-2xl py-3.5 pl-11 pr-4 text-white text-sm font-medium focus:outline-none focus:ring-2 placeholder:text-slate-600 transition-all ${
                       emailHasInput && !emailDomainValid
@@ -476,7 +479,7 @@ export default function AuthPage() {
             <div className="mt-7 flex items-center justify-center gap-2 text-[11px] text-slate-500">
               <Sparkles size={12} className="text-indigo-500/50" />
               <span>
-                Secured with Firebase Auth • Only SRM students
+                • Only SRM students
               </span>
             </div>
           </div>
