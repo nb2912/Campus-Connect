@@ -359,7 +359,7 @@ export default function AuthPage() {
                   />
                   <input
                     type="email"
-                    placeholder="yourname@srmist.edu.in"
+                    placeholder="ab1234@srmist.edu.in"
                     value={email}
                     onChange={(e) => setEmail(e.target.value.trim())}
                     required
