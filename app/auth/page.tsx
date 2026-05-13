@@ -8,6 +8,7 @@ import {
   updateProfile,
   sendEmailVerification,
   signOut,
+  sendPasswordResetEmail,
 } from "firebase/auth";
 import { auth } from "../firebase";
 import { useAuth } from "../context/AuthContext";
@@ -117,7 +118,7 @@ export default function AuthPage() {
       await sendEmailVerification(result.user);
 
       setSuccess(
-        "Account created! A verification email has been sent to your SRM email. Please verify before logging in."
+        "Account created! A verification email has been sent to your SRM email. (Check your Spam folder if it's missing). Please verify before logging in."
       );
 
       // Sign out until they verify
@@ -126,7 +127,7 @@ export default function AuthPage() {
       // Switch to login mode after a delay
       setTimeout(() => {
         setMode("login");
-        setSuccess("Account created! Please check your SRM email for verification, then log in.");
+        setSuccess("Account created! Please check your SRM email (and Spam folder) for verification, then log in.");
       }, 3000);
 
     } catch (error: any) {
@@ -163,6 +164,32 @@ export default function AuthPage() {
       }
 
       router.push("/dashboard");
+    } catch (error: any) {
+      const message = getFirebaseErrorMessage(error?.code);
+      if (message) setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Handle Password Reset
+  const handleResetPassword = async () => {
+    if (!email) {
+      setError("Please enter your SRM email first.");
+      return;
+    }
+    if (!validateEmail(email)) {
+      setError("Please enter a valid SRM email (ab1234@srmist.edu.in).");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSuccess("Password reset link sent! Please check your SRM email. If you don't see it, check your Spam/Junk folder and mark it as 'Not Spam'.");
     } catch (error: any) {
       const message = getFirebaseErrorMessage(error?.code);
       if (message) setError(message);
@@ -410,6 +437,19 @@ export default function AuthPage() {
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+
+                {/* Forgot Password Link */}
+                {mode === "login" && (
+                  <div className="flex justify-end px-2">
+                    <button
+                      type="button"
+                      onClick={handleResetPassword}
+                      className="text-xs font-bold text-indigo-400/80 hover:text-indigo-400 transition-colors"
+                    >
+                      Forgot password?
+                    </button>
+                  </div>
+                )}
 
                 {/* Confirm Password (Sign Up only) */}
                 {mode === "signup" && (

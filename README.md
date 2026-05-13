@@ -33,7 +33,7 @@ SRM Social eliminates this friction. By leveraging **real-time data synchronizat
 
 ### 🛡️ Security & Privacy-First
 
-* **OAuth 2.0 Integration:** Strict Firebase Authentication restricted to University G-Suite accounts.
+* **Verified Access:** Strict Firebase Email/Password Authentication restricted to `@srmist.edu.in` accounts.
 * **Ephemeral Chat:** Secure, real-time coordination without disclosing personal phone numbers until trust is established.
 
 ---
@@ -46,7 +46,7 @@ SRM Social eliminates this friction. By leveraging **real-time data synchronizat
 | **Styling** | [Tailwind CSS](https://tailwindcss.com/) & [Framer Motion](https://www.framer.com/motion/) |
 | **Backend-as-a-Service** | [Firebase](https://firebase.google.com/) |
 | **Database** | [Firestore](https://firebase.google.com/docs/firestore) (Real-time Snapshots) |
-| **Authentication** | Google Identity (Domain Restricted) |
+| **Authentication** | Firebase Auth (Email & Password) |
 | **Deployment** | Firebase Hosting |
 
 ---

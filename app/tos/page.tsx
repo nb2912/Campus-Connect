@@ -64,7 +64,7 @@ const sections: Section[] = [
           <li><strong className="text-white">Optional profile data:</strong> phone number, hostel/address, and UPI ID — provided voluntarily.</li>
           <li><strong className="text-white">Notifications:</strong> messages sent to other users when you interact with their plans.</li>
         </ul>
-        <p>Your data is stored securely on Google Firebase (Firestore) and is not sold to any third party. Your UPI ID and phone number are visible to users in shared plans to facilitate coordination. Do not add sensitive payment information beyond what is needed for plan coordination.</p>
+        <p>Your data is stored securely on Firebase (Firestore) and is not sold to any third party. Your UPI ID and phone number are visible to users in shared plans to facilitate coordination. Do not add sensitive payment information beyond what is needed for plan coordination.</p>
         <p>Plans are automatically deleted 3 hours after the scheduled plan time. Notification history is retained for up to 50 most recent entries.</p>
       </>
     ),
