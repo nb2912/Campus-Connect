@@ -25,7 +25,6 @@ import {
   AlertTriangle,
   CheckCircle,
   ChevronLeft,
-  Sparkles,
 } from "lucide-react";
 
 const ALLOWED_DOMAIN = "@srmist.edu.in";
@@ -43,7 +42,7 @@ export default function AuthPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  // Redirect if already logged in with correct domain
+
   useEffect(() => {
     if (user && user.email?.endsWith(ALLOWED_DOMAIN)) {
       router.push("/dashboard");
@@ -81,7 +80,6 @@ export default function AuthPage() {
     }
   };
 
-  // Handle Email/Password Sign Up
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -91,17 +89,14 @@ export default function AuthPage() {
       setError(`Only emails in the format ab1234@srmist.edu.in are allowed.`);
       return;
     }
-
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
-
     if (password !== confirmPassword) {
       setError("Passwords don't match.");
       return;
     }
-
     if (!displayName.trim()) {
       setError("Please enter your name.");
       return;
@@ -110,21 +105,14 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const result = await createUserWithEmailAndPassword(auth, email, password);
-
-      // Set display name
       await updateProfile(result.user, { displayName: displayName.trim() });
-
-      // Send verification email
       await sendEmailVerification(result.user);
 
       setSuccess(
         "Account created! A verification email has been sent to your SRM email. (Check your Spam folder if it's missing). Please verify before logging in."
       );
-
-      // Sign out until they verify
       await signOut(auth);
 
-      // Switch to login mode after a delay
       setTimeout(() => {
         setMode("login");
         setSuccess("Account created! Please check your SRM email (and Spam folder) for verification, then log in.");
@@ -138,7 +126,6 @@ export default function AuthPage() {
     }
   };
 
-  // Handle Email/Password Login
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -152,8 +139,6 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const result = await signInWithEmailAndPassword(auth, email, password);
-
-      // Check if email is verified
       if (!result.user.emailVerified) {
         await sendEmailVerification(result.user);
         await signOut(auth);
@@ -162,7 +147,6 @@ export default function AuthPage() {
         );
         return;
       }
-
       router.push("/dashboard");
     } catch (error: any) {
       const message = getFirebaseErrorMessage(error?.code);
@@ -172,7 +156,6 @@ export default function AuthPage() {
     }
   };
   
-  // Handle Password Reset
   const handleResetPassword = async () => {
     if (!email) {
       setError("Please enter your SRM email first.");
@@ -198,337 +181,240 @@ export default function AuthPage() {
     }
   };
 
-
-
-  // Derive live email validation state
   const emailDomainValid = email.length === 0 || validateEmail(email);
   const emailHasInput = email.length > 0;
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans selection:bg-indigo-500/30 flex flex-col items-center justify-center relative overflow-hidden px-4">
-      {/* --- BACKGROUND FX --- */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-30%] left-[-15%] w-[700px] h-[700px] bg-indigo-600/20 rounded-full blur-[140px] animate-pulse" />
-        <div className="absolute bottom-[-25%] right-[-10%] w-[500px] h-[500px] bg-purple-600/15 rounded-full blur-[100px]" />
-        <div className="absolute top-[50%] left-[60%] w-[250px] h-[250px] bg-blue-500/10 rounded-full blur-[80px]" />
-      </div>
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 flex flex-col items-center justify-center relative overflow-hidden px-4">
+      
+      {/* Minimal Background */}
+      <div className="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white via-slate-50 to-slate-50" />
 
-      <div className="relative z-10 w-full max-w-md">
-        {/* --- BACK TO HOME --- */}
+      <div className="relative z-10 w-full max-w-[420px]">
+        
         <motion.button
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => router.push("/")}
-          className="flex items-center gap-2 text-slate-400 hover:text-white text-sm font-medium mb-8 group transition-colors"
+          className="flex items-center gap-2 text-slate-500 hover:text-slate-900 text-sm font-bold mb-8 transition-colors"
         >
-          <ChevronLeft
-            size={16}
-            className="group-hover:-translate-x-0.5 transition-transform"
-          />
-          Back to Home
+          <ChevronLeft size={16} />
+          Back
         </motion.button>
 
-        {/* --- AUTH CARD --- */}
         <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#1e293b]/70 backdrop-blur-2xl shadow-2xl shadow-indigo-900/20"
+          className="rounded-[24px] border border-slate-200 bg-white p-8 md:p-10 shadow-2xl shadow-slate-200/50"
         >
-          {/* Decorative top gradient line */}
-          <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
-
-          <div className="p-8 md:p-10">
-            {/* --- LOGO & HEADER --- */}
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2.5 mb-5">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-                  <Zap className="text-white fill-white" size={20} />
-                </div>
-                <span className="text-2xl font-bold tracking-tight">
-                  SRM<span className="text-indigo-400">Social</span>
-                </span>
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center gap-2 mb-4">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
+                <Zap className="text-indigo-600 fill-indigo-600" size={20} />
               </div>
-              <h1 className="text-2xl font-bold text-white mb-2">
-                {mode === "login" ? "Welcome back" : "Create your account"}
-              </h1>
-              <p className="text-sm text-slate-400">
-                {mode === "login"
-                  ? "Sign in to your campus network"
-                  : "Join the exclusive SRM community"}
-              </p>
             </div>
+            <h1 className="text-2xl font-bold text-slate-900 tracking-tight mb-2">
+              {mode === "login" ? "Welcome back" : "Create an account"}
+            </h1>
+            <p className="text-sm text-slate-500 font-medium">
+              {mode === "login" ? "Enter your details to sign in" : "Join the SRM network"}
+            </p>
+          </div>
 
-            {/* --- DOMAIN BADGE --- */}
-            <div className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-bold mb-6">
-              <ShieldCheck size={14} className="text-indigo-400" />
-              Only @srmist.edu.in emails allowed
-            </div>
+          {/* Mode Tabs */}
+          <div className="flex gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200 mb-8">
+            <button
+              type="button"
+              onClick={() => { setMode("login"); setError(null); setSuccess(null); }}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
+                mode === "login" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Log In
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode("signup"); setError(null); setSuccess(null); }}
+              className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all duration-200 ${
+                mode === "signup" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-900"
+              }`}
+            >
+              Sign Up
+            </button>
+          </div>
 
-            {/* --- MODE TABS --- */}
-            <div className="flex gap-1 p-1 bg-black/20 rounded-2xl border border-white/5 mb-7">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("login");
-                  setError(null);
-                  setSuccess(null);
-                }}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                  mode === "login"
-                    ? "bg-white text-black shadow-lg"
-                    : "text-slate-400 hover:text-white"
-                }`}
+          {/* Messages */}
+          <AnimatePresence mode="wait">
+            {error && (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0, y: -8, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -8, height: 0 }}
+                className="mb-6"
               >
-                Log In
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("signup");
-                  setError(null);
-                  setSuccess(null);
-                }}
-                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
-                  mode === "signup"
-                    ? "bg-white text-black shadow-lg"
-                    : "text-slate-400 hover:text-white"
-                }`}
+                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-red-50 border border-red-100">
+                  <AlertTriangle size={16} className="text-red-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-red-600 leading-relaxed font-semibold">{error}</p>
+                </div>
+              </motion.div>
+            )}
+            {success && (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, y: -8, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: "auto" }}
+                exit={{ opacity: 0, y: -8, height: 0 }}
+                className="mb-6"
               >
-                Sign Up
-              </button>
-            </div>
+                <div className="flex items-start gap-3 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-100">
+                  <CheckCircle size={16} className="text-emerald-500 mt-0.5 shrink-0" />
+                  <p className="text-sm text-emerald-700 leading-relaxed font-semibold">{success}</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-            {/* --- ERROR BANNER --- */}
-            <AnimatePresence mode="wait">
-              {error && (
-                <motion.div
-                  key="error"
-                  initial={{ opacity: 0, y: -8, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: -8, height: 0 }}
-                  className="mb-5"
-                >
-                  <div className="flex items-start gap-3 px-4 py-3.5 rounded-2xl bg-red-500/10 border border-red-500/25">
-                    <AlertTriangle
-                      size={16}
-                      className="text-red-400 mt-0.5 shrink-0"
-                    />
-                    <p className="text-sm text-red-300 font-medium leading-relaxed">
-                      {error}
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* --- SUCCESS BANNER --- */}
-            <AnimatePresence mode="wait">
-              {success && (
-                <motion.div
-                  key="success"
-                  initial={{ opacity: 0, y: -8, height: 0 }}
-                  animate={{ opacity: 1, y: 0, height: "auto" }}
-                  exit={{ opacity: 0, y: -8, height: 0 }}
-                  className="mb-5"
-                >
-                  <div className="flex items-start gap-3 px-4 py-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/25">
-                    <CheckCircle
-                      size={16}
-                      className="text-emerald-400 mt-0.5 shrink-0"
-                    />
-                    <p className="text-sm text-emerald-300 font-medium leading-relaxed">
-                      {success}
-                    </p>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {/* --- AUTH FORM --- */}
-            <AnimatePresence mode="wait">
-              <motion.form
-                key={mode}
-                initial={{ opacity: 0, x: mode === "login" ? -20 : 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: mode === "login" ? 20 : -20 }}
-                transition={{ duration: 0.25 }}
-                onSubmit={mode === "login" ? handleLogin : handleSignUp}
-                className="space-y-4"
-              >
-                
-                {mode === "signup" && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="relative"
-                  >
-                    <User
-                      size={16}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-                    />
+          {/* Form */}
+          <AnimatePresence mode="wait">
+            <motion.form
+              key={mode}
+              initial={{ opacity: 0, x: mode === "login" ? -10 : 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: mode === "login" ? 10 : -10 }}
+              transition={{ duration: 0.2 }}
+              onSubmit={mode === "login" ? handleLogin : handleSignUp}
+              className="space-y-4"
+            >
+              {mode === "signup" && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 pl-1 uppercase tracking-wider">Full Name</label>
+                  <div className="relative">
+                    <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
-                      placeholder="Full Name"
+                      placeholder="John Doe"
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       required
-                      className="w-full bg-black/20 border border-white/10 rounded-2xl py-3.5 pl-11 pr-4 text-white text-sm font-medium focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/10 placeholder:text-slate-600 transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-4 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 transition-colors placeholder:text-slate-400 font-semibold"
                     />
-                  </motion.div>
-                )}
+                  </div>
+                </div>
+              )}
 
-                
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-slate-500 pl-1 uppercase tracking-wider">SRM Email</label>
                 <div className="relative">
-                  <Mail
-                    size={16}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-                  />
+                  <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="email"
                     placeholder="ab1234@srmist.edu.in"
                     value={email}
                     onChange={(e) => setEmail(e.target.value.trim())}
                     required
-                    className={`w-full bg-black/20 border rounded-2xl py-3.5 pl-11 pr-4 text-white text-sm font-medium focus:outline-none focus:ring-2 placeholder:text-slate-600 transition-all ${
+                    className={`w-full bg-slate-50 border rounded-xl py-3 pl-10 pr-4 text-slate-900 text-sm focus:outline-none transition-colors placeholder:text-slate-400 font-semibold ${
                       emailHasInput && !emailDomainValid
-                        ? "border-red-500/40 focus:border-red-500/60 focus:ring-red-500/10"
-                        : emailHasInput && emailDomainValid
-                        ? "border-emerald-500/30 focus:border-emerald-500/50 focus:ring-emerald-500/10"
-                        : "border-white/10 focus:border-indigo-500/60 focus:ring-indigo-500/10"
+                        ? "border-red-300 focus:border-red-500"
+                        : "border-slate-200 focus:border-indigo-500"
                     }`}
                   />
-                  
                   {emailHasInput && (
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
                       {emailDomainValid ? (
-                        <CheckCircle size={16} className="text-emerald-400" />
+                        <CheckCircle size={16} className="text-emerald-500" />
                       ) : (
-                        <AlertTriangle size={16} className="text-red-400" />
+                        <AlertTriangle size={16} className="text-red-500" />
                       )}
                     </div>
                   )}
                 </div>
                 {emailHasInput && !emailDomainValid && (
-                  <p className="text-xs text-red-400/80 ml-2 -mt-1.5">
-                    Email must be in format ab1234@srmist.edu.in
-                  </p>
+                  <p className="text-xs text-red-500 pl-1 font-semibold">Must be @srmist.edu.in format</p>
                 )}
- 
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex justify-between items-center pl-1 pr-1">
+                   <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">Password</label>
+                   {mode === "login" && (
+                     <button
+                       type="button"
+                       onClick={handleResetPassword}
+                       className="text-xs text-indigo-600 hover:text-indigo-700 font-bold transition-colors"
+                     >
+                       Forgot?
+                     </button>
+                   )}
+                </div>
                 <div className="relative">
-                  <Lock
-                    size={16}
-                    className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-                  />
+                  <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type={showPassword ? "text" : "password"}
-                    placeholder="Password"
+                    placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     minLength={6}
-                    className="w-full bg-black/20 border border-white/10 rounded-2xl py-3.5 pl-11 pr-12 text-white text-sm font-medium focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/10 placeholder:text-slate-600 transition-all"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-10 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 transition-colors placeholder:text-slate-400 font-semibold"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                   >
                     {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
+              </div>
 
-                {/* Forgot Password Link */}
-                {mode === "login" && (
-                  <div className="flex justify-end px-2">
-                    <button
-                      type="button"
-                      onClick={handleResetPassword}
-                      className="text-xs font-bold text-indigo-400/80 hover:text-indigo-400 transition-colors"
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
-                )}
-
-                {/* Confirm Password (Sign Up only) */}
-                {mode === "signup" && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    className="relative"
-                  >
-                    <Lock
-                      size={16}
-                      className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"
-                    />
+              {mode === "signup" && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-500 pl-1 uppercase tracking-wider">Confirm Password</label>
+                  <div className="relative">
+                    <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type={showConfirmPassword ? "text" : "password"}
-                      placeholder="Confirm Password"
+                      placeholder="••••••••"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       required
                       minLength={6}
-                      className="w-full bg-black/20 border border-white/10 rounded-2xl py-3.5 pl-11 pr-12 text-white text-sm font-medium focus:outline-none focus:border-indigo-500/60 focus:ring-2 focus:ring-indigo-500/10 placeholder:text-slate-600 transition-all"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-10 pr-10 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 transition-colors placeholder:text-slate-400 font-semibold"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                     >
-                      {showConfirmPassword ? (
-                        <EyeOff size={16} />
-                      ) : (
-                        <Eye size={16} />
-                      )}
+                      {showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                     </button>
-                  </motion.div>
-                )}
-
-                
+                  </div>
+                </div>
+              )}
+              
+              <div className="pt-4">
                 <button
                   type="submit"
                   disabled={loading || (emailHasInput && !emailDomainValid)}
-                  className="group relative w-full py-4 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-bold text-sm rounded-2xl shadow-lg shadow-indigo-500/25 hover:shadow-xl hover:shadow-indigo-500/30 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden active:scale-[0.98]"
+                  className="w-full py-3 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center gap-2 shadow-md shadow-indigo-600/20"
                 >
-                  <span className="relative z-10 flex items-center justify-center gap-2">
-                    {loading ? (
-                      <>
-                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        {mode === "login"
-                          ? "Signing in..."
-                          : "Creating account..."}
-                      </>
-                    ) : (
-                      <>
-                        {mode === "login" ? "Sign In" : "Create Account"}
-                        <ArrowRight
-                          size={16}
-                          className="group-hover:translate-x-0.5 transition-transform"
-                        />
-                      </>
-                    )}
-                  </span>
+                  {loading ? (
+                    <span className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    mode === "login" ? "Sign In" : "Create Account"
+                  )}
                 </button>
-              </motion.form>
-            </AnimatePresence>
-
-
-
-            
-            <div className="mt-7 flex items-center justify-center gap-2 text-[11px] text-slate-500">
-              <Sparkles size={12} className="text-indigo-500/50" />
-              <span>
-                • Only SRM students
-              </span>
-            </div>
-          </div>
+              </div>
+            </motion.form>
+          </AnimatePresence>
         </motion.div>
 
-        {/* --- FOOTER --- */}
-        <p className="text-center text-xs text-slate-600 mt-6">
-          By continuing, you agree to SRMSocial&apos;s{" "}
-          <a href="/tos" className="text-indigo-400/60 hover:text-indigo-400 transition-colors">
+        <p className="text-center text-xs font-bold text-slate-400 mt-8">
+          By continuing, you agree to SRMSocial's{" "}
+          <a href="/tos" className="text-indigo-600 hover:text-indigo-700 transition-colors underline underline-offset-2">
             Terms of Service
           </a>
         </p>

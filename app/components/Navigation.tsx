@@ -10,12 +10,12 @@ function NavIcon({ icon: Icon, label, isActive, onClick, count }: any) {
       <button 
         onClick={onClick} 
         className={cn(
-            "relative flex flex-col items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300", 
-            isActive ? "text-white bg-white/10 scale-110" : "text-slate-400 hover:text-slate-200"
+            "relative flex flex-col items-center justify-center w-12 h-12 rounded-xl transition-all duration-200", 
+            isActive ? "text-indigo-600 bg-indigo-50" : "text-slate-400 hover:text-slate-600 hover:bg-slate-50"
         )}
       >
-          <Icon size={22} className={cn("transition-colors", isActive && "fill-current/20")} />
-          {count > 0 && <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-[#0f172a]" />}
+          <Icon size={20} className={cn("transition-colors", isActive && "fill-indigo-600/10")} />
+          {count > 0 && <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />}
       </button>
   )
 }
@@ -32,30 +32,36 @@ export function Navbar({ activeTab, setActiveTab, user, onOpenModal }: NavProps)
   return (
     <>
       {/* DESKTOP NAVBAR */}
-      <nav className="hidden md:block fixed top-0 inset-x-0 z-50 border-b border-white/5 bg-[#0f172a]/70 backdrop-blur-xl transition-all">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => setActiveTab("FEED")}>
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-              <Zap className="text-white fill-white" size={20} />
+      <nav className="hidden md:block fixed top-0 inset-x-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur-xl transition-all">
+        <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => setActiveTab("FEED")}>
+            <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-600/20 group-hover:scale-105 transition-transform">
+              <Zap className="text-white fill-white" size={16} />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">SRM<span className="text-indigo-400">Social</span></span>
+            <span className="text-lg font-bold tracking-tight text-slate-900">SRM<span className="text-slate-500 font-medium">Social</span></span>
           </div>
-          <div className="flex items-center gap-2 bg-white/5 p-1.5 rounded-full border border-white/5">
+          
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-full border border-slate-200">
              {['FEED', 'LEADERBOARD', 'PROFILE'].map((tab) => (
-               <button key={tab} onClick={() => setActiveTab(tab)} className={cn("px-5 py-2 rounded-full text-xs font-bold transition-all", activeTab === tab ? "bg-white text-black shadow-lg" : "text-slate-400 hover:text-white")}>
+               <button key={tab} onClick={() => setActiveTab(tab)} className={cn("px-5 py-1.5 rounded-full text-xs font-semibold transition-all", activeTab === tab ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-700")}>
                  {tab}
                </button>
              ))}
           </div>
-          <button onClick={onOpenModal} className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-full font-bold text-sm shadow-lg shadow-indigo-500/25 transition-all active:scale-95">+ Plan</button>
+
+          <button onClick={onOpenModal} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-full font-semibold text-sm transition-all active:scale-95 flex items-center gap-1.5 shadow-md shadow-indigo-600/20">
+            <Plus size={16} /> Plan
+          </button>
         </div>
       </nav>
 
-      {/* MOBILE TOP HEADER (Floating Glass Pill) */}
-      <div className="md:hidden fixed top-0 inset-x-0 h-24 bg-gradient-to-b from-[#0f172a] to-transparent z-40 pointer-events-none flex justify-center pt-6">
-         <div className="flex items-center gap-2 pointer-events-auto bg-black/40 backdrop-blur-xl px-4 py-2 rounded-full border border-white/10 shadow-lg">
-            <Zap className="text-indigo-500 fill-indigo-500" size={16} />
-            <span className="text-sm font-bold tracking-tight text-white">SRM<span className="text-indigo-400">Social</span></span>
+      {/* MOBILE TOP HEADER */}
+      <div className="md:hidden fixed top-0 inset-x-0 h-20 bg-gradient-to-b from-white to-white/0 z-40 pointer-events-none flex justify-center pt-3">
+         <div className="flex items-center gap-2 pointer-events-auto bg-white/90 backdrop-blur-md px-4 py-2 rounded-full border border-slate-200 shadow-sm">
+            <div className="w-6 h-6 rounded-md bg-indigo-600 flex items-center justify-center">
+              <Zap className="text-white fill-white" size={12} />
+            </div>
+            <span className="text-sm font-bold tracking-tight text-slate-900">SRM<span className="text-slate-500 font-medium">Social</span></span>
          </div>
       </div>
     </>
@@ -64,13 +70,13 @@ export function Navbar({ activeTab, setActiveTab, user, onOpenModal }: NavProps)
 
 export function BottomNav({ activeTab, setActiveTab, unreadCount, onOpenModal }: NavProps) {
   return (
-    <div className="md:hidden fixed bottom-6 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
-      <div className="flex items-center gap-1 bg-[#1e293b]/90 backdrop-blur-xl border border-white/10 p-2 rounded-[2rem] shadow-2xl shadow-black/50 pointer-events-auto">
+    <div className="md:hidden fixed bottom-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
+      <div className="flex items-center gap-1 bg-white/95 backdrop-blur-xl border border-slate-200 p-1.5 rounded-2xl shadow-xl pointer-events-auto">
           <NavIcon icon={Zap} label="Feed" isActive={activeTab === "FEED"} onClick={() => setActiveTab("FEED")} />
           <NavIcon icon={Trophy} label="Leaders" isActive={activeTab === "LEADERBOARD"} onClick={() => setActiveTab("LEADERBOARD")} />
           
-          <button onClick={onOpenModal} className="mx-2 w-14 h-14 rounded-2xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/40 border border-white/10 active:scale-90 transition-transform">
-              <Plus size={28} />
+          <button onClick={onOpenModal} className="mx-1 w-12 h-12 rounded-xl bg-indigo-600 text-white flex items-center justify-center active:scale-95 transition-transform shadow-md shadow-indigo-600/20">
+              <Plus size={24} />
           </button>
           
           <NavIcon icon={Bell} label="Alerts" count={unreadCount} isActive={activeTab === "ALERTS"} onClick={() => setActiveTab("ALERTS")} />

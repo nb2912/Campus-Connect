@@ -22,7 +22,7 @@ const sections: Section[] = [
     title: "1. Eligibility & Access",
     content: (
       <>
-        <p>SRM Social is exclusively available to currently enrolled students of <strong className="text-white">SRM Institute of Science and Technology (SRMIST)</strong>. Access requires an account created with a valid <code className="text-indigo-300 bg-indigo-500/10 px-1.5 py-0.5 rounded text-xs">ab1234@srmist.edu.in</code> email.</p>
+        <p>SRM Social is exclusively available to currently enrolled students of <strong className="text-white font-medium">SRM Institute of Science and Technology (SRMIST)</strong>. Access requires an account created with a valid <code className="text-neutral-300 bg-neutral-900 border border-neutral-800 px-1.5 py-0.5 rounded text-xs">ab1234@srmist.edu.in</code> email.</p>
         <p>By signing in, you confirm that:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>You are a current SRMIST student with a valid institutional email.</li>
@@ -59,10 +59,10 @@ const sections: Section[] = [
       <>
         <p>When you use SRM Social, the following information is stored:</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong className="text-white">Profile data:</strong> your registered display name and institutional email address.</li>
-          <li><strong className="text-white">Activity data:</strong> plans you create, join, or leave, and your XP points balance.</li>
-          <li><strong className="text-white">Optional profile data:</strong> phone number, hostel/address, and UPI ID — provided voluntarily.</li>
-          <li><strong className="text-white">Notifications:</strong> messages sent to other users when you interact with their plans.</li>
+          <li><strong className="text-white font-medium">Profile data:</strong> your registered display name and institutional email address.</li>
+          <li><strong className="text-white font-medium">Activity data:</strong> plans you create, join, or leave, and your XP points balance.</li>
+          <li><strong className="text-white font-medium">Optional profile data:</strong> phone number, hostel/address, and UPI ID — provided voluntarily.</li>
+          <li><strong className="text-white font-medium">Notifications:</strong> messages sent to other users when you interact with their plans.</li>
         </ul>
         <p>Your data is stored securely on Firebase (Firestore) and is not sold to any third party. Your UPI ID and phone number are visible to users in shared plans to facilitate coordination. Do not add sensitive payment information beyond what is needed for plan coordination.</p>
         <p>Plans are automatically deleted 3 hours after the scheduled plan time. Notification history is retained for up to 50 most recent entries.</p>
@@ -79,7 +79,7 @@ const sections: Section[] = [
         <ul className="list-disc pl-5 space-y-1">
           <li>Content must be accurate, lawful, and relevant to campus life.</li>
           <li>You will not post any offensive, defamatory, or illegal content in plan descriptions or chat.</li>
-          <li>You are limited to <strong className="text-white">3 active plans</strong> at any one time to prevent abuse.</li>
+          <li>You are limited to <strong className="text-white font-medium">3 active plans</strong> at any one time to prevent abuse.</li>
           <li>Deleting a plan you created will affect participants who have already joined — notify them via chat before deleting.</li>
         </ul>
       </>
@@ -92,9 +92,9 @@ const sections: Section[] = [
       <>
         <p>The XP (experience points) system is a gamification feature designed to encourage participation. Points are awarded and deducted as follows:</p>
         <ul className="list-disc pl-5 space-y-1">
-          <li><strong className="text-white">+50 XP</strong> when you successfully join a plan.</li>
-          <li><strong className="text-white">+50 XP</strong> to the creator when someone joins their plan.</li>
-          <li><strong className="text-white">−50 XP</strong> to both parties when a participant leaves.</li>
+          <li><strong className="text-white font-medium">+50 XP</strong> when you successfully join a plan.</li>
+          <li><strong className="text-white font-medium">+50 XP</strong> to the creator when someone joins their plan.</li>
+          <li><strong className="text-white font-medium">−50 XP</strong> to both parties when a participant leaves.</li>
         </ul>
         <p>XP points have no monetary value and cannot be exchanged for any tangible goods or services. The leaderboard is public to all SRM Social users. We reserve the right to adjust, reset, or remove XP at our discretion to maintain fair play.</p>
       </>
@@ -105,7 +105,7 @@ const sections: Section[] = [
     title: "6. Disclaimer of Liability",
     content: (
       <>
-        <p>SRM Social facilitates <strong className="text-white">peer-to-peer coordination only</strong>. We are not responsible for:</p>
+        <p>SRM Social facilitates <strong className="text-white font-medium">peer-to-peer coordination only</strong>. We are not responsible for:</p>
         <ul className="list-disc pl-5 space-y-1">
           <li>Any physical harm, loss, or injury arising from real-world meetups coordinated through the platform.</li>
           <li>Failure of a user to honour a plan they created or joined.</li>
@@ -113,7 +113,7 @@ const sections: Section[] = [
           <li>Loss of data arising from Firebase outages or other service interruptions.</li>
           <li>Consequences arising from sharing personal contact details (phone, UPI ID) voluntarily on the platform.</li>
         </ul>
-        <p>SRM Social is provided <strong className="text-white">"as is"</strong> without warranty of any kind. Use the platform at your own discretion and risk. Always exercise common sense when meeting people you have not previously met in person.</p>
+        <p>SRM Social is provided <strong className="text-white font-medium">"as is"</strong> without warranty of any kind. Use the platform at your own discretion and risk. Always exercise common sense when meeting people you have not previously met in person.</p>
       </>
     ),
   },
@@ -123,7 +123,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>We may update these Terms of Service at any time. Continued use of SRM Social after changes are published constitutes your acceptance of the revised terms. We will attempt to notify users of significant changes via an in-app notice.</p>
-        <p>It is your responsibility to check these terms periodically. The <strong className="text-white">Last Updated</strong> date at the top of this page indicates when the most recent revision was made.</p>
+        <p>It is your responsibility to check these terms periodically. The <strong className="text-white font-medium">Last Updated</strong> date at the top of this page indicates when the most recent revision was made.</p>
       </>
     ),
   },
@@ -133,7 +133,7 @@ const sections: Section[] = [
     content: (
       <>
         <p>We reserve the right to suspend or terminate your access to SRM Social at any time, with or without notice, for any violation of these terms or for behaviour deemed harmful to the community.</p>
-        <p>You may request deletion of your account and associated data by emailing us at <a href={`mailto:${CONTACT_EMAIL}`} className="text-indigo-400 hover:text-indigo-300 underline">{CONTACT_EMAIL}</a>. We will process deletion requests within 7 business days. Note that your joining/leaving actions may have already created notifications in other users' feeds — these cannot be retroactively deleted.</p>
+        <p>You may request deletion of your account and associated data by emailing us at <a href={`mailto:${CONTACT_EMAIL}`} className="text-neutral-300 hover:text-white underline">{CONTACT_EMAIL}</a>. We will process deletion requests within 7 business days. Note that your joining/leaving actions may have already created notifications in other users' feeds — these cannot be retroactively deleted.</p>
       </>
     ),
   },
@@ -141,60 +141,55 @@ const sections: Section[] = [
 
 export default function TermsOfServicePage() {
   return (
-    <div className="min-h-screen bg-[#0f172a] text-white font-sans selection:bg-indigo-500/30">
+    <div className="min-h-screen bg-black text-white font-sans selection:bg-neutral-800">
+      
       {/* Background FX */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-20%] left-[-10%] w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[120px]" />
-        <div className="absolute bottom-[-10%] right-[-5%] w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[100px]" />
-      </div>
+      <div className="fixed inset-0 z-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900/40 via-black to-black" />
 
       <div className="relative z-10 max-w-3xl mx-auto px-6 py-16">
+        
         {/* Back link */}
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-white transition-colors mb-12 group"
+          className="inline-flex items-center gap-2 text-sm text-neutral-500 hover:text-white transition-colors mb-12 group"
         >
-          <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />
-          Back to SRM Social
+          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+          Back to Platform
         </Link>
 
         {/* Header */}
         <div className="mb-12">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-              <Zap className="text-white fill-white" size={20} />
+          <div className="flex items-center gap-2 mb-6">
+            <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
+              <Zap className="text-black fill-black" size={16} />
             </div>
-            <span className="text-xl font-bold tracking-tight">SRM<span className="text-indigo-400">Social</span></span>
           </div>
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-            Terms of{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-              Service
-            </span>
+          <h1 className="text-3xl md:text-5xl font-semibold tracking-tight mb-4">
+            Terms of Service
           </h1>
-          <p className="text-slate-400 text-lg leading-relaxed">
+          <p className="text-neutral-500 text-lg leading-relaxed font-light">
             Please read these terms carefully before using SRM Social. By signing in, you agree to be bound by the terms below.
           </p>
-          <div className="mt-4 inline-flex items-center gap-2 text-xs text-slate-500 bg-white/5 border border-white/5 rounded-full px-4 py-2">
+          <div className="mt-6 inline-flex items-center gap-2 text-xs text-neutral-500 bg-neutral-900 border border-neutral-800 rounded-md px-3 py-1.5">
             <RefreshCw size={12} />
             Last updated: {LAST_UPDATED}
           </div>
         </div>
 
         {/* Sections */}
-        <div className="space-y-8">
+        <div className="space-y-6">
           {sections.map(({ icon: Icon, title, content }) => (
             <section
               key={title}
-              className="bg-[#1e293b]/60 backdrop-blur-md border border-white/5 rounded-3xl p-8 hover:border-indigo-500/20 transition-colors"
+              className="bg-neutral-950 border border-neutral-900 rounded-2xl p-8 hover:border-neutral-800 transition-colors"
             >
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center">
-                  <Icon size={18} className="text-indigo-400" />
+                <div className="w-8 h-8 rounded-lg bg-neutral-900 border border-neutral-800 flex items-center justify-center">
+                  <Icon size={14} className="text-neutral-400" />
                 </div>
-                <h2 className="text-lg font-bold text-white">{title}</h2>
+                <h2 className="text-lg font-medium tracking-tight text-white">{title}</h2>
               </div>
-              <div className="text-slate-400 text-sm leading-relaxed space-y-3">
+              <div className="text-neutral-400 text-sm leading-relaxed space-y-3 font-light">
                 {content}
               </div>
             </section>
@@ -202,23 +197,23 @@ export default function TermsOfServicePage() {
         </div>
 
         {/* Contact footer */}
-        <div className="mt-12 p-8 rounded-3xl bg-indigo-500/5 border border-indigo-500/20 text-center">
-          <Mail size={28} className="text-indigo-400 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-white mb-2">Questions about these terms?</h3>
-          <p className="text-slate-400 text-sm mb-4">
+        <div className="mt-12 p-8 rounded-2xl bg-neutral-900 border border-neutral-800 text-center">
+          <Mail size={24} className="text-neutral-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-white tracking-tight mb-2">Questions about these terms?</h3>
+          <p className="text-neutral-500 text-sm mb-6 font-light">
             If you have any questions or concerns about these Terms of Service, reach out to us directly.
           </p>
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white hover:bg-neutral-200 text-black font-semibold text-sm transition-colors"
           >
             <Mail size={16} />
-            {CONTACT_EMAIL}
+            Email Us
           </a>
         </div>
 
         {/* Bottom */}
-        <div className="mt-10 text-center text-xs text-slate-600">
+        <div className="mt-16 text-center text-xs text-neutral-600">
           © 2026 SRM Social. All rights reserved.
         </div>
       </div>

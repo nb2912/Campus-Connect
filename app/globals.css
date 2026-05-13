@@ -1,9 +1,9 @@
 @import "tailwindcss";
 
 :root {
-  /* Force Dark Theme Colors for the Glassmorphism Look */
-  --background: #0f172a; /* Slate 900 */
-  --foreground: #f8fafc; /* Slate 50 */
+  /* Clean, mobile-app light mode (Swiggy/Zepto inspired) */
+  --background: #f8f9fa; /* Light gray app background */
+  --foreground: #0f172a; /* Slate 900 */
 }
 
 @theme inline {

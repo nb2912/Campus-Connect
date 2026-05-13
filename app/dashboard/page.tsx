@@ -65,13 +65,13 @@ interface LeaderboardEntry {
 
 // --- CONFIG ---
 const CATEGORIES: Record<CategoryKey, { label: string; icon: React.ElementType; color: string; bg: string; border: string }> = {
-  CAB: { label: "Cab", icon: Plane, color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/20" },
-  GYM: { label: "Gym", icon: Dumbbell, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-  TRAIN: { label: "Train", icon: Train, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-  FOOD: { label: "Food", icon: Pizza, color: "text-pink-400", bg: "bg-pink-500/10", border: "border-pink-500/20" },
-  STUDY: { label: "Study", icon: BookOpen, color: "text-violet-400", bg: "bg-violet-500/10", border: "border-violet-500/20" },
-  MOVIE: { label: "Movie", icon: Ticket, color: "text-yellow-400", bg: "bg-yellow-500/10", border: "border-yellow-500/20" },
-  OTHER: { label: "Other", icon: Plus, color: "text-slate-400", bg: "bg-white/5", border: "border-white/10" },
+  CAB: { label: "Cab", icon: Plane, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
+  GYM: { label: "Gym", icon: Dumbbell, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
+  TRAIN: { label: "Train", icon: Train, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
+  FOOD: { label: "Food", icon: Pizza, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
+  STUDY: { label: "Study", icon: BookOpen, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
+  MOVIE: { label: "Movie", icon: Ticket, color: "text-indigo-600", bg: "bg-indigo-50", border: "border-indigo-100" },
+  OTHER: { label: "Other", icon: Plus, color: "text-slate-600", bg: "bg-slate-100", border: "border-slate-200" },
 };
 
 export default function Dashboard() {
@@ -378,7 +378,7 @@ export default function Dashboard() {
   const filteredRequests = requests.filter(r => (filter === "ALL" || r.type === filter) && (!r.time || new Date() <= new Date(new Date(r.time).getTime() + (3 * 3600000))));
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-100 font-sans selection:bg-indigo-500/30 pb-20">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 pb-24">
       
       <Navbar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onOpenModal={() => setIsModalOpen(true)} unreadCount={notifications.filter(n => !n.read).length} />
       
@@ -389,31 +389,31 @@ export default function Dashboard() {
         {activeTab === "FEED" && (
           <>
             <div className="mb-14 space-y-8">
-              <div className="flex justify-between items-end">
+              <div className="flex justify-between items-end border-b border-neutral-900 pb-6">
                   <div className="hidden md:block">
-                      <h1 className="text-6xl font-extrabold mb-3 text-white tracking-tight">Feed.</h1>
-                      <p className="text-slate-400 text-lg">Your campus network, live.</p>
+                      <h1 className="text-4xl font-extrabold mb-1 text-slate-900 tracking-tight">Live Feed</h1>
+                      <p className="text-slate-500 text-sm font-medium">Your campus network, updating in real-time.</p>
                   </div>
-                  <button onClick={requestNotificationPermission} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-xs font-bold text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                  <button onClick={requestNotificationPermission} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 shadow-sm text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all">
                       <Bell size={14} /> Enable Alerts
                   </button>
               </div>
 
               {/* QUICK ACTIONS: LIVE NOW */}
               <div className="space-y-4">
-                  <h2 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400 ml-1">Live Soon / Active</h2>
+                  <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">Starting Soon</h2>
                   <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
                       {requests.filter(r => r.time && new Date(r.time).getTime() - new Date().getTime() < 3600000 && new Date(r.time).getTime() > new Date().getTime()).length === 0 ? (
-                          <div className="px-6 py-4 rounded-3xl bg-white/5 border border-white/5 text-xs text-slate-500 font-medium">No urgent plans right now.</div>
+                          <div className="px-6 py-4 rounded-2xl bg-white border border-slate-200 shadow-sm text-xs text-slate-500 font-semibold">No urgent plans right now.</div>
                       ) : (
                           requests.filter(r => r.time && new Date(r.time).getTime() - new Date().getTime() < 3600000 && new Date(r.time).getTime() > new Date().getTime()).map(r => (
-                              <motion.div key={r.id} whileHover={{ scale: 1.05 }} className="flex-shrink-0 w-64 p-4 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-white/10 backdrop-blur-md">
-                                  <div className="flex items-center gap-3 mb-2">
-                                      <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center"><Zap size={14} className="text-yellow-400 fill-yellow-400" /></div>
-                                      <span className="text-[10px] font-black uppercase tracking-wider text-white">Starting Soon</span>
+                              <motion.div key={r.id} whileHover={{ scale: 1.02 }} className="flex-shrink-0 w-64 p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                                  <div className="flex items-center gap-2 mb-2">
+                                      <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center"><Zap size={12} className="text-indigo-600" /></div>
+                                      <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600">Next 60 Mins</span>
                                   </div>
-                                  <p className="text-sm font-bold text-white truncate">{r.description}</p>
-                                  <p className="text-[10px] text-indigo-300 font-bold mt-1">{format(new Date(r.time), 'h:mm a')}</p>
+                                  <p className="text-sm font-bold text-slate-900 truncate">{r.description}</p>
+                                  <p className="text-xs text-slate-500 font-medium mt-0.5">{format(new Date(r.time), 'h:mm a')}</p>
                               </motion.div>
                           ))
                       )}
@@ -421,12 +421,12 @@ export default function Dashboard() {
               </div>
 
               {/* SMART FLOATING FILTER PILL */}
-              <div className="sticky top-24 z-40 -mx-4 px-4 md:mx-0 md:px-0 pointer-events-none">
-                <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide pointer-events-auto bg-[#0f172a]/60 backdrop-blur-xl p-2 rounded-3xl border border-white/5 shadow-2xl w-fit mx-auto md:mx-0">
-                    <button onClick={() => setFilter("ALL")} className={cn("px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all", filter === "ALL" ? "bg-white text-black shadow-xl scale-110" : "bg-white/5 text-slate-500 hover:text-white")}>All</button>
+              <div className="sticky top-20 z-40 -mx-4 px-4 md:mx-0 md:px-0 pointer-events-none">
+                <div className="flex gap-2 overflow-x-auto pb-4 scrollbar-hide pointer-events-auto bg-white/90 backdrop-blur-xl p-1.5 rounded-full border border-slate-200 shadow-xl shadow-slate-200/50 w-fit mx-auto md:mx-0">
+                    <button onClick={() => setFilter("ALL")} className={cn("px-5 py-2 rounded-full text-xs font-bold transition-all", filter === "ALL" ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/20" : "bg-transparent text-slate-500 hover:text-slate-900")}>All</button>
                     {Object.entries(CATEGORIES).map(([key, cat]) => (
-                    <button key={key} onClick={() => setFilter(key as CategoryKey)} className={cn("px-6 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all shrink-0", filter === key ? `bg-white/10 text-white border border-white/10` : "text-slate-500 hover:text-white hover:bg-white/5")}>
-                        <cat.icon size={14} className={cn("transition-colors", filter === key ? cat.color : "text-slate-600")} />
+                    <button key={key} onClick={() => setFilter(key as CategoryKey)} className={cn("px-5 py-2 rounded-full text-xs font-bold flex items-center gap-2 transition-all shrink-0", filter === key ? `bg-slate-100 text-indigo-600` : "text-slate-500 hover:text-slate-900 hover:bg-slate-50")}>
+                        <cat.icon size={14} className={cn("transition-colors", filter === key ? "text-indigo-600" : "text-slate-400")} />
                         {cat.label}
                     </button>
                     ))}
@@ -439,9 +439,9 @@ export default function Dashboard() {
                 {fetching ? (
                   [1,2,3,4,5,6].map(i => <SkeletonCard key={i} />)
                 ) : filteredRequests.length === 0 ? (
-                    <div className="col-span-full text-center py-20 opacity-50">
-                        <div className="w-20 h-20 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4"><Info size={32}/></div>
-                        <p>No plans found. Be the first to create one!</p>
+                    <div className="col-span-full text-center py-20">
+                        <div className="w-20 h-20 bg-slate-100 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4"><Info size={32}/></div>
+                        <p className="text-slate-500 font-medium">No plans found. Be the first to create one!</p>
                     </div>
                 ) : filteredRequests.map((req) => {
                   const Category = CATEGORIES[req.type as CategoryKey] || CATEGORIES.CAB;
@@ -456,75 +456,71 @@ export default function Dashboard() {
                   const seats = Array.from({ length: capacity }).map((_, i) => i < joinedCount ? "filled" : "empty");
 
                   return (
-                    <motion.div key={req.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={cn("relative p-6 rounded-[2rem] border backdrop-blur-xl transition-all group hover:-translate-y-1 hover:shadow-2xl hover:shadow-indigo-500/10 overflow-hidden", isFull ? "bg-[#0f172a]/50 border-white/5 opacity-75" : "bg-[#1e293b]/60 border-white/5")}>
-                      
-                      {/* CATEGORY MESH BACKGROUND */}
-                      <div className={cn("absolute -top-24 -right-24 w-48 h-48 blur-[80px] opacity-30 group-hover:opacity-50 transition-opacity", Category.bg.split(" ")[0].replace("/10", ""))} />
+                    <motion.div key={req.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={cn("relative p-6 rounded-3xl border transition-all group hover:-translate-y-1 overflow-hidden flex flex-col", isFull ? "bg-slate-50 border-slate-200 opacity-60" : "bg-white border-slate-200 shadow-sm hover:shadow-lg hover:shadow-slate-200/50")}>
 
                       {/* Top Row: User & Time */}
                       <div className="flex justify-between items-start mb-5 relative z-10">
                           <div className="flex items-center gap-3">
-                               <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg", Category.bg, Category.border, "border")}><Category.icon size={20} className={Category.color} /></div>
+                               <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center border", Category.bg, Category.border)}><Category.icon size={16} className={Category.color} /></div>
                               <div>
-                                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wider">{req.type === "OTHER" ? (req.customType || "Other") : req.type}</p>
+                                  <p className="text-xs text-slate-500 font-bold uppercase tracking-wider">{req.type === "OTHER" ? (req.customType || "Other") : req.type}</p>
                                   <div className="flex items-center gap-1.5 mt-0.5">
-                                      {req.creatorPhoto ? <Image src={req.creatorPhoto} alt="" width={16} height={16} className="w-4 h-4 rounded-full" /> : <User size={12} className="text-slate-500"/>}
-                                      <span className="text-xs text-slate-300 font-bold">{req.creatorName?.split(" ")[0]}</span>
+                                      {req.creatorPhoto ? <Image src={req.creatorPhoto} alt="" width={16} height={16} className="w-4 h-4 rounded-full" /> : <User size={12} className="text-slate-400"/>}
+                                      <span className="text-xs text-slate-700 font-medium">{req.creatorName?.split(" ")[0]}</span>
                                   </div>
                               </div>
                           </div>
-                          <span className="text-xs font-bold text-slate-400 bg-black/40 px-3 py-1.5 rounded-full border border-white/5">{req.createdAt ? format(req.createdAt.toDate(), 'h:mm a') : 'Now'}</span>
+                          <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md">{req.createdAt ? format(req.createdAt.toDate(), 'h:mm a') : 'Now'}</span>
                       </div>
 
                        {/* Content */}
                       {req.type === "CAB" ? (
                           <div className="mb-4 space-y-2">
                               <div className="flex items-center gap-3">
-                                  <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                                  <p className="text-white font-bold truncate">{req.startLoc || "Pickup"}</p>
+                                  <div className="w-2 h-2 rounded-full bg-slate-900" />
+                                  <p className="text-slate-900 font-semibold truncate">{req.startLoc || "Pickup"}</p>
                               </div>
-                              <div className="ml-1 w-0.5 h-4 bg-white/10" />
+                              <div className="ml-1 w-px h-4 bg-slate-200" />
                               <div className="flex items-center gap-3">
-                                  <div className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]" />
-                                  <p className="text-white font-bold truncate">{req.endLoc || "Destination"}</p>
+                                  <div className="w-2 h-2 rounded-full bg-slate-400" />
+                                  <p className="text-slate-600 font-medium truncate">{req.endLoc || "Destination"}</p>
                               </div>
                           </div>
                       ) : (
-                          <h3 className={cn("text-xl font-bold leading-tight mb-4 text-white", isFull && "text-slate-500 line-through decoration-slate-600")}>
+                          <h3 className={cn("text-lg font-semibold leading-tight mb-4 text-slate-900", isFull && "text-slate-400 line-through decoration-slate-300")}>
                               {req.type === "FOOD" ? `Order from: ${req.restaurant}` : req.type === "OTHER" ? `${req.customType}: ${req.description}` : req.description}
                           </h3>
                       )}
-                      <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 w-fit mb-6 border border-white/5">
-                          <Calendar size={14} className="text-indigo-400" />
-                          <span className="text-sm font-bold text-slate-200">{req.time ? format(new Date(req.time), 'MMM d, h:mm a') : 'Flexible Time'}</span>
-
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 w-fit mb-6 border border-slate-100">
+                          <Calendar size={14} className="text-slate-500" />
+                          <span className="text-sm font-semibold text-slate-700">{req.time ? format(new Date(req.time), 'MMM d, h:mm a') : 'Flexible Time'}</span>
                       </div>
 
                       {/* Footer: Seats & Action */}
-                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
-                          <div className="flex gap-1">
+                      <div className="flex items-center justify-between mt-auto pt-4 border-t border-slate-100">
+                          <div className="flex gap-1.5">
                               {seats.map((status, i) => (
-                                  <div key={i} className={cn("w-2.5 h-2.5 rounded-full transition-colors", status === "filled" ? "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" : "bg-white/10")} />
+                                  <div key={i} className={cn("w-2 h-2 rounded-full transition-colors", status === "filled" ? "bg-indigo-600" : "bg-slate-200")} />
                               ))}
                           </div>
 
                            <div className="flex gap-2">
                               {(isMine || iJoined) && (
-                                  <button onClick={() => setActiveChat(req)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-white border border-white/10 transition-colors"><MessageCircle size={18} /></button>
+                                  <button onClick={() => setActiveChat(req)} className="w-9 h-9 rounded-md bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200 transition-colors shadow-sm"><MessageCircle size={16} /></button>
                               )}
 
                               {iJoined && !isMine && req.creatorUpi && (
-                                  <button onClick={() => handlePayment(req.creatorUpi ?? '', req.description)} className="flex items-center gap-2 px-4 rounded-full bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/20 transition-all font-bold text-xs uppercase tracking-wider">
-                                      Pay UPI
+                                  <button onClick={() => handlePayment(req.creatorUpi ?? '', req.description)} className="flex items-center gap-2 px-3 rounded-md bg-slate-50 hover:bg-slate-100 text-slate-900 border border-slate-200 transition-all font-semibold text-xs shadow-sm">
+                                      Pay
                                   </button>
                               )}
 
                               {isMine ? (
-                                  <button onClick={() => handleDelete(req.id)} className="w-10 h-10 rounded-full bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center text-red-400 border border-red-500/20 transition-colors"><Trash2 size={18} /></button>
+                                  <button onClick={() => handleDelete(req.id)} className="w-9 h-9 rounded-md bg-red-50 hover:bg-red-100 flex items-center justify-center text-red-600 border border-red-100 transition-colors shadow-sm"><Trash2 size={16} /></button>
                               ) : iJoined ? (
-                                  <button onClick={() => handleLeave(req)} className="w-10 h-10 rounded-full bg-white/5 hover:bg-red-500/10 hover:text-red-400 flex items-center justify-center text-slate-400 border border-white/10 transition-colors"><LeaveIcon size={18} /></button>
+                                  <button onClick={() => handleLeave(req)} className="w-9 h-9 rounded-md bg-slate-50 hover:bg-slate-100 flex items-center justify-center text-slate-600 border border-slate-200 transition-colors shadow-sm"><LeaveIcon size={16} /></button>
                               ) : (
-                                  <button onClick={() => handleJoin(req)} disabled={isFull} className={cn("px-5 py-2.5 rounded-full font-bold text-sm transition-all", isFull ? "bg-white/5 text-slate-500" : "bg-white text-black hover:bg-indigo-50")}>
+                                  <button onClick={() => handleJoin(req)} disabled={isFull} className={cn("px-4 py-2 rounded-md font-semibold text-sm transition-all shadow-sm", isFull ? "bg-slate-100 text-slate-400" : "bg-indigo-600 text-white hover:bg-indigo-700")}>
                                       {isFull ? "Full" : "Join"}
                                   </button>
                               )}
@@ -552,25 +548,25 @@ export default function Dashboard() {
         {/* LEADERBOARD TAB */}
         {activeTab === "LEADERBOARD" && (
           <div className="max-w-xl mx-auto">
-             <div className="text-center mb-10"><h2 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-500 mb-2">Campus Legends</h2><p className="text-slate-400">Earn 50 XP per meetup</p></div>
-             <div className="space-y-4">{leaderboard.map((u, i) => (<div key={u.id} className={cn("flex items-center gap-5 p-5 rounded-[1.5rem] border bg-[#1e293b]/60 backdrop-blur-md border-white/5 transition-transform hover:scale-[1.02]")}><div className={cn("w-10 h-10 flex items-center justify-center font-bold rounded-xl text-lg", i===0 ? "bg-yellow-500 text-black shadow-lg shadow-yellow-500/20" : "text-slate-500 bg-white/5")}>{i + 1}</div><div className="w-12 h-12 rounded-full bg-white/5 overflow-hidden border border-white/10">{u.photoURL ? <Image src={u.photoURL} alt="" width={48} height={48} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User size={20}/></div>}</div><div className="flex-1"><h3 className="font-bold text-white text-base">{u.displayName}</h3><p className="text-xs text-indigo-400 font-bold tracking-wider">{u.points} XP</p></div>{i === 0 && <Crown size={24} className="text-yellow-500 fill-yellow-500 animate-pulse" />}</div>))}</div>
+             <div className="text-center mb-10"><h2 className="text-3xl font-semibold text-slate-900 tracking-tight mb-2">Top Users</h2><p className="text-slate-500">Earn 50 XP per meetup</p></div>
+             <div className="space-y-3">{leaderboard.map((u, i) => (<div key={u.id} className={cn("flex items-center gap-5 p-4 rounded-2xl border bg-white border-slate-200 transition-transform hover:scale-[1.02] shadow-sm")}><div className={cn("w-8 h-8 flex items-center justify-center font-bold rounded-lg text-sm", i===0 ? "bg-amber-100 text-amber-600" : "text-slate-500 bg-slate-100")}>{i + 1}</div><div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden border border-slate-200">{u.photoURL ? <Image src={u.photoURL} alt="" width={40} height={40} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User size={16} className="text-slate-400"/></div>}</div><div className="flex-1"><h3 className="font-bold text-slate-900 text-sm">{u.displayName}</h3><p className="text-xs text-slate-500 font-medium mt-0.5">{u.points} XP</p></div>{i === 0 && <Crown size={20} className="text-amber-500" />}</div>))}</div>
           </div>
         )}
 
         {/* ALERTS TAB */}
         {activeTab === "ALERTS" && (
             <div className="max-w-xl mx-auto">
-                <h2 className="text-2xl font-bold mb-6 text-white">Notifications</h2>
-                <div className="space-y-2">{notifications.length === 0 ? <div className="text-center text-slate-500 py-10">No new alerts</div> : notifications.map(n => (<div key={n.id} onClick={() => updateDoc(doc(db, "notifications", n.id), { read: true })} className={cn("p-4 rounded-2xl border cursor-pointer flex gap-3 items-start backdrop-blur-md transition-colors", n.read ? "bg-white/5 border-white/5 opacity-50" : "bg-indigo-500/10 border-indigo-500/20 hover:bg-indigo-500/20")}><div className="mt-1">{n.type === "WITHDRAW" ? <AlertTriangle size={16} className="text-red-400" /> : <Check size={16} className="text-emerald-400" />}</div><div><p className="text-sm text-slate-200 font-medium">{n.message}</p><span className="text-xs text-slate-500 mt-1 block">{n.createdAt ? format(n.createdAt.toDate(), 'MMM d, h:mm a') : 'Just now'}</span></div></div>))}</div>
+                <h2 className="text-2xl font-bold tracking-tight mb-6 text-slate-900">Notifications</h2>
+                <div className="space-y-2">{notifications.length === 0 ? <div className="text-center text-slate-500 font-medium py-10">No new alerts</div> : notifications.map(n => (<div key={n.id} onClick={() => updateDoc(doc(db, "notifications", n.id), { read: true })} className={cn("p-4 rounded-xl border cursor-pointer flex gap-3 items-start transition-colors", n.read ? "bg-transparent border-slate-200 opacity-60" : "bg-white border-slate-200 shadow-sm hover:shadow-md")}><div className="mt-0.5">{n.type === "WITHDRAW" ? <AlertTriangle size={16} className="text-slate-400" /> : <Check size={16} className="text-indigo-600" />}</div><div><p className="text-sm font-semibold text-slate-800">{n.message}</p><span className="text-xs font-medium text-slate-500 mt-1 block">{n.createdAt ? format(n.createdAt.toDate(), 'MMM d, h:mm a') : 'Just now'}</span></div></div>))}</div>
             </div>
         )}
 
         {/* PROFILE TAB */}
         {activeTab === "PROFILE" && (
             <div className="max-w-xl mx-auto space-y-6">
-                <div className="text-center"><div className="w-28 h-28 mx-auto rounded-full border-4 border-white/10 overflow-hidden mb-4 shadow-2xl">{user?.photoURL && <Image src={user.photoURL} alt="" width={112} height={112} className="w-full h-full object-cover" />}</div><h2 className="text-3xl font-bold text-white">{userProfile?.displayName || user?.displayName}</h2><p className="text-slate-400">{user?.email}</p><div className="mt-4 inline-flex items-center gap-2 px-5 py-2 rounded-full bg-amber-500/10 text-amber-400 font-bold border border-amber-500/20"><Trophy size={16} /> {userProfile?.points || 0} XP</div></div>
-                <div className="bg-[#1e293b]/60 backdrop-blur-md rounded-[2rem] p-8 space-y-6 border border-white/5"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400"><Phone size={18} /></div><div><p className="text-xs text-slate-500 uppercase font-bold tracking-widest">Phone</p><p className="text-white font-medium">{userProfile?.phoneNumber || "Not set"}</p></div></div><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400"><Home size={18} /></div><div><p className="text-xs text-slate-500 uppercase font-bold tracking-widest">Hostel</p><p className="text-white font-medium">{userProfile?.address || "Not set"}</p></div></div></div>
-                <div className="grid grid-cols-2 gap-4"><button onClick={() => setIsProfileEditOpen(true)} className="py-4 rounded-2xl bg-white text-black font-bold hover:scale-[1.02] transition-transform">Edit Profile</button><button onClick={() => signOut(auth)} className="py-4 rounded-2xl bg-red-500/10 text-red-400 font-bold border border-red-500/20 hover:bg-red-500/20 transition-colors">Sign Out</button></div>
+                <div className="text-center"><div className="w-24 h-24 mx-auto rounded-full border border-slate-200 shadow-sm overflow-hidden mb-4 bg-slate-100">{user?.photoURL ? <Image src={user.photoURL} alt="" width={96} height={96} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center"><User size={32} className="text-slate-400"/></div>}</div><h2 className="text-2xl font-bold tracking-tight text-slate-900">{userProfile?.displayName || user?.displayName}</h2><p className="text-slate-500 font-medium text-sm">{user?.email}</p><div className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-100 text-slate-700 font-bold text-sm border border-slate-200"><Trophy size={14} className="text-amber-500" /> {userProfile?.points || 0} XP</div></div>
+                <div className="bg-white shadow-sm rounded-2xl p-6 space-y-6 border border-slate-200"><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-indigo-600"><Phone size={16} /></div><div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Phone</p><p className="text-slate-900 font-semibold text-sm mt-0.5">{userProfile?.phoneNumber || "Not set"}</p></div></div><div className="flex items-center gap-4"><div className="w-10 h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-indigo-600"><Home size={16} /></div><div><p className="text-xs text-slate-500 font-bold uppercase tracking-wider">Hostel</p><p className="text-slate-900 font-semibold text-sm mt-0.5">{userProfile?.address || "Not set"}</p></div></div></div>
+                <div className="grid grid-cols-2 gap-3"><button onClick={() => setIsProfileEditOpen(true)} className="py-3 rounded-xl bg-indigo-600 text-white shadow-sm shadow-indigo-600/20 font-bold text-sm hover:bg-indigo-700 transition-colors">Edit Profile</button><button onClick={() => signOut(auth)} className="py-3 rounded-xl bg-white text-red-600 font-bold text-sm border border-slate-200 hover:bg-red-50 hover:border-red-100 transition-colors shadow-sm">Sign Out</button></div>
             </div>
         )}
 
@@ -582,64 +578,64 @@ export default function Dashboard() {
       {/* CREATE MODAL / BOTTOM SHEET */}
       <AnimatePresence>
       {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-0 md:p-4">
             <motion.div
                 initial={{ y: "100%" }}
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="bg-[#1e293b] w-full md:w-[500px] rounded-t-[2.5rem] md:rounded-[2.5rem] border-t md:border border-white/10 p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto"
+                className="bg-white w-full md:w-[480px] rounded-t-3xl md:rounded-3xl border-t md:border border-slate-200 p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto"
             >
-                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 md:hidden" />
-                <div className="flex justify-between items-center mb-8"><h2 className="text-3xl font-bold text-white">New Plan</h2><button onClick={() => setIsModalOpen(false)} className="bg-white/5 p-2 rounded-full hover:bg-white/10"><X size={20} className="text-white" /></button></div>
-                 <form onSubmit={handleCreateRequest} className="space-y-6 pb-10 md:pb-0">
-                    <div className="grid grid-cols-3 gap-3">{Object.entries(CATEGORIES).map(([key, cat]) => (<button key={key} type="button" onClick={() => setFormType(key as CategoryKey)} className={cn("flex flex-col items-center gap-2 p-3 rounded-2xl border transition-all", formType === key ? `bg-white text-black shadow-lg scale-105 border-transparent` : "bg-white/5 border-transparent text-slate-400 hover:bg-white/10")}><cat.icon size={24} className={formType === key ? "text-indigo-600" : ""} /><span className="text-xs font-bold">{cat.label}</span></button>))}</div>
+                <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6 md:hidden" />
+                <div className="flex justify-between items-center mb-6"><h2 className="text-xl font-bold tracking-tight text-slate-900">Create Plan</h2><button onClick={() => setIsModalOpen(false)} className="bg-slate-100 p-2 rounded-full hover:bg-slate-200 transition-colors"><X size={16} className="text-slate-500 hover:text-slate-900" /></button></div>
+                 <form onSubmit={handleCreateRequest} className="space-y-5 pb-10 md:pb-0">
+                    <div className="grid grid-cols-4 gap-2">{Object.entries(CATEGORIES).map(([key, cat]) => (<button key={key} type="button" onClick={() => setFormType(key as CategoryKey)} className={cn("flex flex-col items-center gap-1.5 p-2 rounded-xl border transition-all", formType === key ? `bg-indigo-50 border-indigo-200 text-indigo-700` : "bg-white border-slate-200 text-slate-500 hover:bg-slate-50 hover:text-slate-900")}><cat.icon size={18} className={formType === key ? "text-indigo-600" : ""} /><span className="text-[10px] font-bold">{cat.label}</span></button>))}</div>
                     <div className="space-y-4">
                         {formType === "CAB" ? (
-                            <div className="space-y-3">
+                            <div className="space-y-2">
                                 <div className="relative">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-500" />
-                                    <input required placeholder="Start Location " value={formStartLoc} onChange={(e) => setFormStartLoc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-10 pr-5 text-white text-base focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-900" />
+                                    <input required placeholder="Start Location" value={formStartLoc} onChange={(e) => setFormStartLoc(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 placeholder:text-slate-400 transition-colors" />
                                 </div>
-                                <div className="ml-1 w-0.5 h-4 bg-white/10" />
+                                <div className="ml-4 w-px h-2 bg-slate-200" />
                                 <div className="relative">
-                                    <div className="absolute left-4 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-orange-500" />
-                                    <input required placeholder="End Location" value={formEndLoc} onChange={(e) => setFormEndLoc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 pl-10 pr-5 text-white text-base focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                                    <div className="absolute left-3.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-slate-400" />
+                                    <input required placeholder="End Location" value={formEndLoc} onChange={(e) => setFormEndLoc(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-4 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 placeholder:text-slate-400 transition-colors" />
                                 </div>
                             </div>
                          ) : formType === "FOOD" ? (
-                            <input required placeholder="Where are you ordering from? " value={formRestaurant} onChange={(e) => setFormRestaurant(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-5 text-white text-lg focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                            <input required placeholder="Where are you ordering from?" value={formRestaurant} onChange={(e) => setFormRestaurant(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 placeholder:text-slate-400 transition-colors" />
                         ) : formType === "OTHER" ? (
                             <div className="space-y-3">
-                                <input required placeholder="Activity Name" value={formCustomType} onChange={(e) => setFormCustomType(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-5 text-white text-lg focus:outline-none focus:border-indigo-500 placeholder:text-slate-600 font-bold" />
-                                <input required placeholder="Details " value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-5 text-white text-base focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                                <input required placeholder="Activity Name" value={formCustomType} onChange={(e) => setFormCustomType(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 placeholder:text-slate-400 font-semibold transition-colors" />
+                                <input required placeholder="Details" value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 placeholder:text-slate-400 transition-colors" />
                             </div>
                         ) : (
-                            <input required placeholder="Short description of your plan..." value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-4 px-5 text-white text-lg focus:outline-none focus:border-indigo-500 placeholder:text-slate-600" />
+                            <input required placeholder="Short description of your plan..." value={formDesc} onChange={(e) => setFormDesc(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 px-4 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 placeholder:text-slate-400 transition-colors" />
                         )}
 
-                        <div className="flex gap-4">
+                        <div className="flex gap-3">
                             <div className="flex-1">
-                                <label className="text-xs text-slate-500 uppercase font-bold ml-2 mb-2 block">Day</label>
-                                <div className="flex gap-2 p-1 bg-black/20 rounded-2xl border border-white/5">
-                                    <button type="button" onClick={() => setFormDay("TODAY")} className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold transition-all", formDay === "TODAY" ? "bg-white text-black shadow-lg" : "text-slate-500 hover:text-white")}>Today</button>
-                                    <button type="button" onClick={() => setFormDay("TOMORROW")} className={cn("flex-1 py-2.5 rounded-xl text-xs font-bold transition-all", formDay === "TOMORROW" ? "bg-white text-black shadow-lg" : "text-slate-500 hover:text-white")}>Tomorrow</button>
+                                <label className="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1.5 block">Day</label>
+                                <div className="flex gap-1 p-1 bg-slate-50 rounded-xl border border-slate-200">
+                                    <button type="button" onClick={() => setFormDay("TODAY")} className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", formDay === "TODAY" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-900")}>Today</button>
+                                    <button type="button" onClick={() => setFormDay("TOMORROW")} className={cn("flex-1 py-1.5 rounded-lg text-xs font-bold transition-all", formDay === "TOMORROW" ? "bg-white text-indigo-600 shadow-sm" : "text-slate-500 hover:text-slate-900")}>Tomorrow</button>
                                 </div>
                             </div>
-                            <div className="flex-1 border-l border-white/5 pl-4">
-                                <label className="text-xs text-slate-500 uppercase font-bold ml-2 mb-2 block">Time</label>
-                                <input type="time" required value={formHour} onChange={(e) => setFormHour(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-2.5 px-4 text-white focus:outline-none focus:border-indigo-500 [color-scheme:dark]" />
+                            <div className="w-28">
+                                <label className="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1.5 block">Time</label>
+                                <input type="time" required value={formHour} onChange={(e) => setFormHour(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 transition-colors" />
                             </div>
-                            <div className="w-24 border-l border-white/5 pl-4">
-                                <label className="text-xs text-slate-500 uppercase font-bold ml-2 mb-2 block">Seats</label>
+                            <div className="w-20">
+                                <label className="text-[10px] text-slate-500 uppercase font-bold ml-1 mb-1.5 block">Seats</label>
                                 <div className="relative">
-                                    <Users size={14} className="absolute left-3 top-3.5 text-slate-500" />
-                                    <input type="number" min="2" max="10" required value={formCapacity} onChange={(e) => setFormCapacity(e.target.value)} className="w-full bg-black/20 border border-white/10 rounded-2xl py-2.5 pl-8 pr-2 text-white text-sm focus:outline-none focus:border-indigo-500" />
+                                    <Users size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                                    <input type="number" min="2" max="10" required value={formCapacity} onChange={(e) => setFormCapacity(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-7 pr-2 text-slate-900 text-sm focus:outline-none focus:border-indigo-500 transition-colors" />
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-4 rounded-2xl text-lg shadow-lg shadow-indigo-500/25 transition-all active:scale-95">Post Request</button>
+                    <button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-600/20 font-bold py-3.5 rounded-xl text-sm transition-colors active:scale-95">Post Request</button>
                 </form>
             </motion.div>
         </div>
@@ -649,24 +645,24 @@ export default function Dashboard() {
       {/* EDIT PROFILE MODAL / BOTTOM SHEET */}
       <AnimatePresence>
       {isProfileEditOpen && (
-        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-black/80 backdrop-blur-sm p-0 md:p-4">
+        <div className="fixed inset-0 z-[100] flex items-end md:items-center justify-center bg-slate-900/40 backdrop-blur-sm p-0 md:p-4">
             <motion.div 
                 initial={{ y: "100%" }} 
                 animate={{ y: 0 }} 
                 exit={{ y: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 300 }}
-                className="bg-[#1e293b] w-full md:w-96 rounded-t-[2.5rem] md:rounded-[2.5rem] border-t md:border border-white/10 p-8 shadow-2xl relative"
+                className="bg-white w-full md:w-96 rounded-t-3xl md:rounded-3xl border-t md:border border-slate-200 p-6 shadow-2xl relative"
             >
-                <div className="w-12 h-1.5 bg-white/10 rounded-full mx-auto mb-6 md:hidden" />
-                <h2 className="text-2xl font-bold mb-8 text-center text-white">Edit Profile</h2>
+                <div className="w-10 h-1 bg-slate-200 rounded-full mx-auto mb-6 md:hidden" />
+                <h2 className="text-lg font-bold mb-6 text-center text-slate-900 tracking-tight">Edit Profile</h2>
                 <form onSubmit={handleUpdateProfile} className="space-y-4 pb-10 md:pb-0">
-                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-2">Display Name</label><input name="name" defaultValue={userProfile?.displayName} className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none" /></div>
-                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-2">Phone</label><input name="phone" defaultValue={userProfile?.phoneNumber} placeholder="+91 00000 00000" className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none" /></div>
-                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-2">Hostel/Address</label><input name="address" defaultValue={userProfile?.address}  className="w-full bg-black/20 border border-white/10 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none" /></div>
-                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-2">UPI ID (for bill splitting)</label><input name="upi" defaultValue={userProfile?.upiId} placeholder="username@upi" className="w-full bg-black/20 border border-indigo-500/20 rounded-2xl p-4 text-white focus:border-indigo-500 focus:outline-none placeholder:text-slate-600 font-mono text-sm" /></div>
-                    <div className="flex gap-3 pt-4">
-                        <button type="button" onClick={() => setIsProfileEditOpen(false)} className="flex-1 py-4 rounded-2xl bg-white/5 text-slate-300 font-bold hover:bg-white/10 transition-colors">Cancel</button>
-                        <button type="submit" className="flex-1 py-4 rounded-2xl bg-indigo-600 text-white font-bold hover:bg-indigo-500 transition-colors">Save Changes</button>
+                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-1">Display Name</label><input name="name" defaultValue={userProfile?.displayName} className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 text-sm focus:border-indigo-500 focus:outline-none transition-colors" /></div>
+                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-1">Phone</label><input name="phone" defaultValue={userProfile?.phoneNumber} placeholder="+91 00000 00000" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 text-sm focus:border-indigo-500 focus:outline-none transition-colors" /></div>
+                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-1">Hostel/Address</label><input name="address" defaultValue={userProfile?.address}  className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 text-sm focus:border-indigo-500 focus:outline-none transition-colors" /></div>
+                    <div className="space-y-1"><label className="text-[10px] text-slate-500 uppercase font-bold ml-1">UPI ID (for bill splitting)</label><input name="upi" defaultValue={userProfile?.upiId} placeholder="username@upi" className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-900 text-sm focus:border-indigo-500 focus:outline-none placeholder:text-slate-400 font-mono transition-colors" /></div>
+                    <div className="flex gap-2 pt-4">
+                        <button type="button" onClick={() => setIsProfileEditOpen(false)} className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm hover:bg-slate-200 transition-colors border border-slate-200 shadow-sm">Cancel</button>
+                        <button type="submit" className="flex-1 py-3 rounded-xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/20">Save</button>
                     </div>
                 </form>
             </motion.div>
@@ -682,7 +678,7 @@ export default function Dashboard() {
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
               onClick={() => setConfirmDialog(null)}
             />
             <motion.div
@@ -690,23 +686,23 @@ export default function Dashboard() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={{ type: "spring", stiffness: 350, damping: 30 }}
-              className="relative z-10 w-full max-w-sm bg-[#1e293b] border border-white/10 rounded-3xl p-7 shadow-2xl text-center"
+              className="relative z-10 w-full max-w-sm bg-white border border-slate-200 rounded-3xl p-6 shadow-2xl text-center"
             >
-              <div className="w-14 h-14 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-5">
-                <AlertTriangle size={26} className="text-red-400" />
+              <div className="w-12 h-12 rounded-full bg-red-50 border border-red-100 flex items-center justify-center mx-auto mb-4">
+                <AlertTriangle size={20} className="text-red-600" />
               </div>
-              <h3 className="text-lg font-bold text-white mb-2">Are you sure?</h3>
-              <p className="text-sm text-slate-400 mb-7">{confirmDialog.message}</p>
-              <div className="flex gap-3">
+              <h3 className="text-lg font-bold text-slate-900 mb-1">Are you sure?</h3>
+              <p className="text-sm text-slate-500 mb-6">{confirmDialog.message}</p>
+              <div className="flex gap-2">
                 <button
                   onClick={() => setConfirmDialog(null)}
-                  className="flex-1 py-3 rounded-2xl bg-white/5 text-slate-300 font-bold hover:bg-white/10 transition-colors"
+                  className="flex-1 py-3 rounded-xl bg-slate-50 text-slate-600 font-bold text-sm hover:bg-slate-100 transition-colors border border-slate-200 shadow-sm"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDialog.onConfirm}
-                  className="flex-1 py-3 rounded-2xl bg-red-500/20 text-red-300 font-bold border border-red-500/30 hover:bg-red-500/30 transition-colors"
+                  className="flex-1 py-3 rounded-xl bg-red-600 text-white font-bold text-sm hover:bg-red-700 transition-colors shadow-md shadow-red-600/20"
                 >
                   Confirm
                 </button>
@@ -723,24 +719,24 @@ export default function Dashboard() {
 
 function SkeletonCard() {
     return (
-        <div className="p-6 rounded-[2rem] border border-white/5 bg-[#1e293b]/40 animate-pulse">
+        <div className="p-6 rounded-2xl border border-neutral-800 bg-neutral-950 animate-pulse">
             <div className="flex justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white/5" />
+                    <div className="w-10 h-10 rounded-lg bg-neutral-900" />
                     <div className="space-y-2">
-                        <div className="h-2 w-16 bg-white/5 rounded" />
-                        <div className="h-3 w-24 bg-white/5 rounded" />
+                        <div className="h-2 w-16 bg-neutral-900 rounded" />
+                        <div className="h-3 w-24 bg-neutral-900 rounded" />
                     </div>
                 </div>
-                <div className="h-6 w-16 bg-white/5 rounded-full" />
+                <div className="h-6 w-16 bg-neutral-900 rounded-md" />
             </div>
-            <div className="h-6 w-full bg-white/5 rounded-lg mb-4" />
-            <div className="h-4 w-2/3 bg-white/5 rounded-lg mb-8" />
-            <div className="flex justify-between pt-4 border-t border-white/5">
+            <div className="h-6 w-full bg-neutral-900 rounded-lg mb-4" />
+            <div className="h-4 w-2/3 bg-neutral-900 rounded-lg mb-8" />
+            <div className="flex justify-between pt-4 border-t border-neutral-800">
                 <div className="flex gap-1 items-center">
-                    {[1,2,3].map(i => <div key={i} className="w-2.5 h-2.5 rounded-full bg-white/5" />)}
+                    {[1,2,3].map(i => <div key={i} className="w-2 h-2 rounded-full bg-neutral-900" />)}
                 </div>
-                <div className="h-10 w-20 bg-white/5 rounded-full" />
+                <div className="h-9 w-20 bg-neutral-900 rounded-md" />
             </div>
         </div>
     )
