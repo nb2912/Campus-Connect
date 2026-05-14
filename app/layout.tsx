@@ -20,6 +20,7 @@ export const metadata: Metadata = {
   description: "Find your squad at SRM.",
   manifest: "/manifest.json", // Links to your PWA manifest
   icons: {
+    icon: "/icon-192.png",
     apple: "/icon-192.png", // Icon for iPhones
   },
   appleWebApp: {
@@ -46,6 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         // Added 'bg-[#0f172a] text-slate-100' to prevent white flash on load
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#0f172a] text-slate-100`}
       >

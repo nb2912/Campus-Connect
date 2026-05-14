@@ -50,7 +50,7 @@ export default function AuthPage() {
   }, [user, router]);
 
   const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[a-zA-Z]{2}[0-9]{4}@srmist\.edu\.in$/;
+    const emailRegex = /^[\w\.-]+@srmist\.edu\.in$/;
     return emailRegex.test(email);
   };
 
@@ -278,7 +278,7 @@ export default function AuthPage() {
           </AnimatePresence>
 
           {/* Form */}
-          <AnimatePresence mode="wait">
+          <AnimatePresence>
             <motion.form
               key={mode}
               initial={{ opacity: 0, x: mode === "login" ? -10 : 10 }}

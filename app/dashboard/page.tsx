@@ -439,9 +439,11 @@ export default function Dashboard() {
                 {fetching ? (
                   [1,2,3,4,5,6].map(i => <SkeletonCard key={i} />)
                 ) : filteredRequests.length === 0 ? (
-                    <div className="col-span-full text-center py-20">
-                        <div className="w-20 h-20 bg-slate-100 text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4"><Info size={32}/></div>
-                        <p className="text-slate-500 font-medium">No plans found. Be the first to create one!</p>
+                    <div className="col-span-full text-center py-20 flex flex-col items-center">
+                        <div className="w-20 h-20 bg-indigo-50 text-indigo-200 rounded-full flex items-center justify-center mb-4"><Zap size={32}/></div>
+                        <h3 className="text-xl font-bold text-slate-900 mb-1">It's a bit quiet here...</h3>
+                        <p className="text-slate-500 font-medium mb-8 max-w-sm">No plans are happening right now. Why not be the pioneer and post the first one?</p>
+                        <button onClick={() => setIsModalOpen(true)} className="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-lg shadow-indigo-600/20 hover:scale-105 transition-transform">Create a Plan</button>
                     </div>
                 ) : filteredRequests.map((req) => {
                   const Category = CATEGORIES[req.type as CategoryKey] || CATEGORIES.CAB;
@@ -719,24 +721,24 @@ export default function Dashboard() {
 
 function SkeletonCard() {
     return (
-        <div className="p-6 rounded-2xl border border-neutral-800 bg-neutral-950 animate-pulse">
+        <div className="p-6 rounded-3xl border border-slate-100 bg-white shadow-sm animate-pulse">
             <div className="flex justify-between mb-6">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-neutral-900" />
+                    <div className="w-10 h-10 rounded-lg bg-slate-100" />
                     <div className="space-y-2">
-                        <div className="h-2 w-16 bg-neutral-900 rounded" />
-                        <div className="h-3 w-24 bg-neutral-900 rounded" />
+                        <div className="h-2 w-16 bg-slate-100 rounded" />
+                        <div className="h-3 w-24 bg-slate-100 rounded" />
                     </div>
                 </div>
-                <div className="h-6 w-16 bg-neutral-900 rounded-md" />
+                <div className="h-6 w-16 bg-slate-100 rounded-md" />
             </div>
-            <div className="h-6 w-full bg-neutral-900 rounded-lg mb-4" />
-            <div className="h-4 w-2/3 bg-neutral-900 rounded-lg mb-8" />
-            <div className="flex justify-between pt-4 border-t border-neutral-800">
+            <div className="h-6 w-full bg-slate-100 rounded-lg mb-4" />
+            <div className="h-4 w-2/3 bg-slate-100 rounded-lg mb-8" />
+            <div className="flex justify-between pt-4 border-t border-slate-50">
                 <div className="flex gap-1 items-center">
-                    {[1,2,3].map(i => <div key={i} className="w-2 h-2 rounded-full bg-neutral-900" />)}
+                    {[1,2,3].map(i => <div key={i} className="w-2 h-2 rounded-full bg-slate-100" />)}
                 </div>
-                <div className="h-9 w-20 bg-neutral-900 rounded-md" />
+                <div className="h-9 w-20 bg-slate-100 rounded-md" />
             </div>
         </div>
     )
