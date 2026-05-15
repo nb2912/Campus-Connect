@@ -380,7 +380,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-indigo-100 pb-24">
       
-      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} user={user} onOpenModal={() => setIsModalOpen(true)} unreadCount={notifications.filter(n => !n.read).length} />
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} user={user} userProfile={userProfile} onOpenModal={() => setIsModalOpen(true)} unreadCount={notifications.filter(n => !n.read).length} />
       
       {/* Toast notifications are now rendered by the global ToastProvider */}
 
