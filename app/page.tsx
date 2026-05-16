@@ -6,6 +6,7 @@ import { motion, useInView } from "framer-motion";
 import { Plane, Dumbbell, Pizza, ShieldCheck, ArrowRight, Zap, Users, Star, ChevronRight, BookOpen, Film, Train, Sparkles, LogIn, Mail } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import Footer from "./components/Footer";
 
 
 export default function Home() {
@@ -123,6 +124,7 @@ export default function Home() {
       <CategoryShowcase onLogin={handleLogin} />
       <HowItWorks onLogin={handleLogin} />
       <FooterCTA onLogin={handleLogin} />
+      <Footer />
     </div>
   );
 }

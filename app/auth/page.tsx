@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -26,6 +27,7 @@ import {
   CheckCircle,
   ChevronLeft,
 } from "lucide-react";
+import Footer from "../components/Footer";
 
 const ALLOWED_DOMAIN = "@srmist.edu.in";
 
@@ -414,11 +416,12 @@ export default function AuthPage() {
 
         <p className="text-center text-xs font-bold text-slate-400 mt-8">
           By continuing, you agree to SRMSocial's{" "}
-          <a href="/tos" className="text-indigo-600 hover:text-indigo-700 transition-colors underline underline-offset-2">
+          <Link href="/tos" className="text-indigo-600 hover:text-indigo-700 transition-colors underline underline-offset-2">
             Terms of Service
-          </a>
+          </Link>
         </p>
       </div>
+      <Footer />
     </div>
   );
 }
